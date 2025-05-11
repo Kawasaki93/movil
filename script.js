@@ -533,9 +533,6 @@ $(document).ready(function() {
 
 //VISIBILIDAD DE LOS CIRCULOS---------------
 
-  // Variable para controlar la visibilidad de los círculos
-  let circlesVisible = true;
-
   // Comprobar el estado guardado en localStorage al cargar la página
   window.onload = function() {
     // Verificamos si hay un estado guardado en localStorage
