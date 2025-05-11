@@ -8,8 +8,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-
-
 let variable1;
 for (var x = 1; x < 126; x++) {
   let cloned_element = $(".sunbed").first().clone();
