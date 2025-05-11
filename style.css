@@ -896,9 +896,30 @@ input, textarea {
     display: block;
   }
   .fab {
-    font-size: 5.4rem;
-    width: 135px;
-    height: 135px;
+    position: fixed !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    bottom: 24px !important;
+    margin: 0 !important;
+    z-index: 1003 !important;
+    width: 64px;
+    height: 64px;
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, #ffb74d 60%, #ffa726 100%);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    pointer-events: auto;
+  }
+  .fab:active {
+    background: linear-gradient(135deg, #ffa726 60%, #ffb74d 100%);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+    transform: translateX(-50%) scale(0.96) !important;
   }
   .calculator-footer {
     font-size: 55px;
