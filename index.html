@@ -11,7 +11,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
   <!-- Estilos personalizados -->
   <link rel="stylesheet" href="./style.css">
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.png">
 </head>
 <body>
 
@@ -153,6 +154,17 @@
   // Inicializar Firebase
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
+</script>
+
+<script>
+// Registro del Service Worker con ruta relativa para GitHub Pages
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then((reg) => { console.log("Service Worker registrado", reg); })
+      .catch((err) => { console.error("Error al registrar el Service Worker", err); });
+  });
+}
 </script>
 </body>
 </html>
