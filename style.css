@@ -881,36 +881,40 @@ input, textarea {
     right: 0;
     bottom: 0;
     width: 100vw;
-    padding-bottom: 0;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding: 0;
     margin: 0;
-    z-index: 1000;
+    z-index: 1002;
     background: transparent;
+    pointer-events: none;
   }
   .fab {
-    width: 72px;
-    height: 72px;
-    font-size: 2.5rem;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.25);
-    margin-bottom: 8px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 8px;
+    margin: 0;
+    z-index: 1003;
+    pointer-events: auto;
   }
   .menu-desplegable {
     width: 100vw;
-    min-width: unset;
     left: 0;
     right: 0;
     transform: none;
-    bottom: 72px;
+    bottom: 80px;
     border-radius: 18px 18px 0 0;
     max-height: 60vh;
     overflow-y: auto;
     position: fixed;
     margin: 0;
     padding: 18px 0 10px 0;
+    z-index: 1001;
   }
   .menu-desplegable button {
-    font-size: 1.2rem;
-    padding: 18px 0;
-    border-radius: 12px;
     width: 90vw;
     margin: 0 auto;
     display: block;
