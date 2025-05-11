@@ -875,54 +875,84 @@ input, textarea {
 }
 
 @media (max-width: 600px) {
+  .menu-desplegable {
+    margin-left: 500px!important;
+    left: 250px;
+    right: 0;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 32px 0 24px 0;
+  }
+  .menu-desplegable button {
+    width: 98vw;
+    max-width: 600px;
+    font-size: 2.7rem;
+    padding: 33px 0;
+    border-radius: 22px;
+    margin: 0 auto;
+    margin-left: 0;
+    display: block;
+  }
   .fab {
     position: fixed !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    bottom: 20px !important;
+    bottom: 24px !important;
     margin: 0 !important;
     z-index: 1003 !important;
-    width: 90px;
-    height: 90px;
-    font-size: 3rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+    width: 64px;
+    height: 64px;
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, #ffb74d 60%, #ffa726 100%);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
     pointer-events: auto;
   }
-  .botonera-fija {
-    position: static !important;
-    width: 100vw;
-    height: auto;
-    background: transparent;
-    padding: 0;
-    margin: 0;
-    z-index: 1;
-    display: block;
+  .fab:active {
+    background: linear-gradient(135deg, #ffa726 60%, #ffb74d 100%);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+    transform: translateX(-50%) scale(0.96) !important;
   }
-  .menu-desplegable {
-    width: 100vw;
-    left: 0;
-    right: 0;
-    transform: none;
-    bottom: 110px;
-    border-radius: 18px 18px 0 0;
-    max-height: 65vh;
-    overflow-y: auto;
-    position: fixed;
-    margin: 0;
-    padding: 22px 0 16px 0;
-    z-index: 1001;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 18px;
+  .calculator-footer {
+    font-size: 55px;
+    padding-left: 110px;
+    padding-right: 110px;
+    padding-bottom: 2200px;
+    margin-top: 1320px;
+    border-radius: 88px;
   }
-  .menu-desplegable button {
-    width: 96vw;
-    max-width: 500px;
-    font-size: 1.5rem;
-    padding: 22px 0;
-    border-radius: 16px;
-    margin: 0 auto;
-    display: block;
+  .calculator-footer h2 {
+    font-size: 37.4px;
+  }
+  .calculator-footer label {
+    font-size: 44px;
+  }
+  .calculator-footer input,
+  .calculator-footer select {
+    font-size: 44px;
+    padding: 13.2px;
+  }
+  .calculator-footer button {
+    font-size: 33px;
+    padding: 15.4px 26.4px;
+  }
+  .cambio {
+    font-size: 77px;
+  }
+  .registro p {
+    font-size: 37.4px;
+  }
+  .button-container button {
+    font-size: 28.6px;
+    padding: 13.2px 22px;
   }
 }
