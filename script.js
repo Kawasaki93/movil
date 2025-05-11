@@ -533,40 +533,43 @@ $(document).ready(function() {
 
 //VISIBILIDAD DE LOS CIRCULOS---------------
 
-  // Comprobar el estado guardado en localStorage al cargar la página
-  window.onload = function() {
-    // Verificamos si hay un estado guardado en localStorage
-    const savedState = localStorage.getItem('circlesVisible');
-    if (savedState !== null) {
-      circlesVisible = savedState === 'true'; // Convertirlo a un valor booleano
-    }
+// Declarar circlesVisible antes de cualquier uso
+let circlesVisible = true;
 
-    // Actualizar la visibilidad de los círculos según el estado guardado
-    const circles = document.querySelectorAll('.circle');
-    circles.forEach(circle => {
-      circle.style.display = circlesVisible ? 'block' : 'none';
-    });
-
-    // Restaurar el color de los círculos desde localStorage
-    document.querySelectorAll('.circle').forEach(circle => {
-      const savedColorStep = localStorage.getItem('circle_color_' + circle.id);
-      if (savedColorStep) {
-        circle.classList.add('step' + savedColorStep); // Aplicar la clase de color guardada
-      }
-    });
-  };
-
-  // Función para alternar la visibilidad de los círculos y guardar el estado
-  function toggleCircles() {
-    const circles = document.querySelectorAll('.circle');
-    circles.forEach(circle => {
-      circle.style.display = circlesVisible ? 'none' : 'block';
-    });
-
-    // Guardar el nuevo estado en localStorage
-    circlesVisible = !circlesVisible;
-    localStorage.setItem('circlesVisible', circlesVisible); // Guardamos el estado
+// Comprobar el estado guardado en localStorage al cargar la página
+window.onload = function() {
+  // Verificamos si hay un estado guardado en localStorage
+  const savedState = localStorage.getItem('circlesVisible');
+  if (savedState !== null) {
+    circlesVisible = savedState === 'true'; // Convertirlo a un valor booleano
   }
+
+  // Actualizar la visibilidad de los círculos según el estado guardado
+  const circles = document.querySelectorAll('.circle');
+  circles.forEach(circle => {
+    circle.style.display = circlesVisible ? 'block' : 'none';
+  });
+
+  // Restaurar el color de los círculos desde localStorage
+  document.querySelectorAll('.circle').forEach(circle => {
+    const savedColorStep = localStorage.getItem('circle_color_' + circle.id);
+    if (savedColorStep) {
+      circle.classList.add('step' + savedColorStep); // Aplicar la clase de color guardada
+    }
+  });
+};
+
+// Función para alternar la visibilidad de los círculos y guardar el estado
+function toggleCircles() {
+  const circles = document.querySelectorAll('.circle');
+  circles.forEach(circle => {
+    circle.style.display = circlesVisible ? 'none' : 'block';
+  });
+
+  // Guardar el nuevo estado en localStorage
+  circlesVisible = !circlesVisible;
+  localStorage.setItem('circlesVisible', circlesVisible); // Guardamos el estado
+}
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 var SunbedController = function() {
@@ -690,9 +693,6 @@ $("#fila8_btn").click(function () {
 SunbedController.init();
 
 //CALCuLadora--------------------------------
-
-let totalEfectivo = 0;
-let totalTarjeta = 0;
 
 function calcularCambio() {
   const hamaca = document.getElementById('hamaca').value;
@@ -1308,52 +1308,54 @@ function guardarHistorialPago(data) {
 
 // === ESCUCHAR CAMBIOS EN TIEMPO REAL ===
 
-// Sincronizar colores y nombres de hamacas
-db.ref('sunbeds').on('value', (snapshot) => {
-  const sunbeds = snapshot.val();
-  for (const clonId in sunbeds) {
-    const color = sunbeds[clonId].color;
-    const nombre = sunbeds[clonId].customer_name;
-    // Solo actualiza si existe en el DOM
-    const $hamaca = $('#' + clonId);
-    if ($hamaca.length) {
-      $hamaca.removeClass('step1 step2 step3 step4 step5 step6');
-      if (color) $hamaca.addClass('step' + color);
-      $hamaca.find('.customer_name').val(nombre || '');
-    } else {
-      // Si no existe en el DOM, elimina la hamaca de Firebase
-      db.ref('sunbeds/' + clonId).remove();
-    }
-  }
-});
-
-// Sincronizar steps de círculos
-db.ref('circles').on('value', (snapshot) => {
-  const circles = snapshot.val();
-  for (const circleId in circles) {
-    const step = circles[circleId].step;
-    const $circle = $('#' + circleId);
-    if ($circle.length) {
-      $circle.removeClass('step1 step2 step3');
-      if (step) $circle.addClass('step' + step);
-    }
-  }
-});
-
-// Sincronizar historial de pagos
-db.ref('historial').on('value', (snapshot) => {
-  const historial = snapshot.val();
-  const $historial = $('#historial');
-  $historial.empty();
-  if (historial) {
-    Object.values(historial).reverse().forEach(entry => {
-      const li = document.createElement('li');
-      if (entry.devolucion) {
-        li.textContent = `Devolución Hamaca ${entry.hamaca} - Total: €${entry.total} - Devolución: €${entry.devolucion} - Método: ${entry.metodo} - ${entry.fecha}`;
+$(document).ready(function() {
+  // Sincronizar colores y nombres de hamacas
+  db.ref('sunbeds').on('value', (snapshot) => {
+    const sunbeds = snapshot.val();
+    for (const clonId in sunbeds) {
+      const color = sunbeds[clonId].color;
+      const nombre = sunbeds[clonId].customer_name;
+      // Solo actualiza si existe en el DOM
+      const $hamaca = $('#' + clonId);
+      if ($hamaca.length) {
+        $hamaca.removeClass('step1 step2 step3 step4 step5 step6');
+        if (color) $hamaca.addClass('step' + color);
+        $hamaca.find('.customer_name').val(nombre || '');
       } else {
-        li.textContent = `Hamaca ${entry.hamaca} - Total: €${entry.total} - Recibido: €${entry.recibido} - Cambio: €${entry.cambio} - Método: ${entry.metodo} - ${entry.fecha}`;
+        // Si no existe en el DOM, elimina la hamaca de Firebase
+        db.ref('sunbeds/' + clonId).remove();
       }
-      $historial.prepend(li);
-    });
-  }
+    }
+  });
+
+  // Sincronizar steps de círculos
+  db.ref('circles').on('value', (snapshot) => {
+    const circles = snapshot.val();
+    for (const circleId in circles) {
+      const step = circles[circleId].step;
+      const $circle = $('#' + circleId);
+      if ($circle.length) {
+        $circle.removeClass('step1 step2 step3');
+        if (step) $circle.addClass('step' + step);
+      }
+    }
+  });
+
+  // Sincronizar historial de pagos
+  db.ref('historial').on('value', (snapshot) => {
+    const historial = snapshot.val();
+    const $historial = $('#historial');
+    $historial.empty();
+    if (historial) {
+      Object.values(historial).reverse().forEach(entry => {
+        const li = document.createElement('li');
+        if (entry.devolucion) {
+          li.textContent = `Devolución Hamaca ${entry.hamaca} - Total: €${entry.total} - Devolución: €${entry.devolucion} - Método: ${entry.metodo} - ${entry.fecha}`;
+        } else {
+          li.textContent = `Hamaca ${entry.hamaca} - Total: €${entry.total} - Recibido: €${entry.recibido} - Cambio: €${entry.cambio} - Método: ${entry.metodo} - ${entry.fecha}`;
+        }
+        $historial.prepend(li);
+      });
+    }
+  });
 });
