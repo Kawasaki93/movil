@@ -706,6 +706,11 @@ let totalTarjeta = 0;
 
 function calcularCambio() {
   const hamaca = document.getElementById('hamaca').value;
+  if (!hamaca) {
+    alert('Introduzca número de hamaca');
+    document.getElementById('hamaca').focus();
+    return;
+  }
   const totalSelect = parseFloat(document.getElementById('totalSelect').value);
   const totalManual = parseFloat(document.getElementById('totalManual').value);
   const recibidoManual = parseFloat(document.getElementById('recibidoManual').value);
@@ -993,6 +998,20 @@ function cargarHistorial() {
 $(document).ready(function() {
   cargarEstadosHamacas();
   cargarHistorial();
+  // Seleccionar por defecto 16€ 2 hamacas en el select de pago
+  const totalSelect = document.getElementById('totalSelect');
+  if (totalSelect) {
+    totalSelect.value = '16';
+  }
+  // Mostrar la fecha de hoy al lado de 'Cobro'
+  const fechaCobro = document.getElementById('fecha-cobro');
+  if (fechaCobro) {
+    const hoy = new Date();
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const anio = hoy.getFullYear();
+    fechaCobro.textContent = `${dia}/${mes}/${anio}`;
+  }
 });
 
 function reiniciarCalculadora() {

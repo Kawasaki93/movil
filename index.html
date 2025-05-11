@@ -38,9 +38,10 @@
 <!-- Calculadora de cobro -->
 <div class="calculator-footer">
   <h2>Cobro</h2>
+  <div id="fecha-cobro" style="font-size:50px; color:#666; margin-bottom:10px;"></div>
 
   <label for="hamaca">Hamaca:</label>
-  <input type="number" id="hamaca" placeholder="hamaca">
+  <input type="number" id="hamaca" placeholder="" required>
 
   <label for="totalSelect">Pagar&nbsp;(€):</label>
   <select id="totalSelect">
@@ -55,10 +56,10 @@
     <option value="72">72€ 9 hamacas</option>
     <option value="80">80€ 10 hamacas</option>
   </select>
-  <input type="number" id="totalManual" placeholder="A Pagar" step="0.01">
+  <input type="number" id="totalManual" placeholder="Otra cantidad" step="0.01">
 
   <label for="recibidoManual">Recibido&nbsp;(€):</label>
-  <input type="number" id="recibidoManual" placeholder="Entregado" step="0.01">
+  <input type="number" id="recibidoManual" placeholder="" step="0.01">
 
   <label for="pago">Método:</label>
   <select id="pago">
