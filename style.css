@@ -861,7 +861,7 @@ input, textarea {
   border: none;
   border-radius: 8px;
   padding: 10px 0;
-  font-size: 1rem;
+  font-size: 2rem;
   cursor: pointer;
   transition: background 0.2s;
 }
