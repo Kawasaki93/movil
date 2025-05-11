@@ -766,6 +766,7 @@ input, textarea {
   width: 100%;
   box-sizing: border-box;
   word-wrap: break-word;
+  font-size: 20px;
 }
 
 /* Estilos para el encabezado del historial */
