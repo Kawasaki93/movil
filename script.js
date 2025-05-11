@@ -901,12 +901,15 @@ if ('serviceWorker' in navigator) {
 
 
 // Bucle de colores para los círculos
-
-
 function setupColorCycle(selector, stepsCount, storagePrefix) {
     $(selector).each(function (index) {
         const el = $(this);
         const isCircle = el.hasClass('circle');
+        
+        // Asegurarse de que el elemento tiene un ID
+        if (!el.attr('id')) {
+            el.attr('id', 'circle_' + index);
+        }
 
         el.on('dblclick', function (event) {
             event.stopPropagation();
@@ -925,7 +928,9 @@ function setupColorCycle(selector, stepsCount, storagePrefix) {
 
             // Guardar en Firebase
             if (isCircle) {
-                guardarStepCircle(el.attr('id'), newStep);
+                const circleId = el.attr('id');
+                console.log('Guardando círculo:', circleId, 'con step:', newStep);
+                guardarStepCircle(circleId, newStep);
             } else {
                 guardarColorSunbed(el.attr('id'), newStep);
             }
@@ -1122,7 +1127,17 @@ function guardarColorSunbed(clonId, colorStep) {
 
 // Guardar color/step de circle en Firebase en vez de localStorage
 function guardarStepCircle(circleId, step) {
-  db.ref('circles/' + circleId).set({ step: step });
+  if (!circleId) {
+    console.error('Error: circleId no definido');
+    return;
+  }
+  console.log('Guardando en Firebase - circleId:', circleId, 'step:', step);
+  db.ref('circles/' + circleId).set({
+    step: step,
+    lastUpdated: new Date().toISOString()
+  }).catch(error => {
+    console.error('Error al guardar en Firebase:', error);
+  });
 }
 
 // Guardar historial de pagos en Firebase en vez de localStorage
@@ -1156,16 +1171,38 @@ $(document).ready(function() {
   // Sincronizar steps de círculos
   db.ref('circles').on('value', (snapshot) => {
     const circles = snapshot.val();
+    console.log('Recibiendo actualización de círculos:', circles);
+    
     if (circles) {
       for (const circleId in circles) {
         const step = circles[circleId].step;
         const $circle = $('#' + circleId);
+        
         if ($circle.length) {
+          console.log('Actualizando círculo:', circleId, 'con step:', step);
           $circle.removeClass('step1 step2 step3');
           if (step) {
             $circle.addClass('step' + step);
             $circle.data('actual-step', step);
           }
+        } else {
+          console.log('Círculo no encontrado en DOM:', circleId);
+        }
+      }
+    }
+  });
+
+  // Inicializar los círculos con sus colores actuales
+  db.ref('circles').once('value').then((snapshot) => {
+    const circles = snapshot.val();
+    if (circles) {
+      for (const circleId in circles) {
+        const step = circles[circleId].step;
+        const $circle = $('#' + circleId);
+        if ($circle.length && step) {
+          $circle.removeClass('step1 step2 step3');
+          $circle.addClass('step' + step);
+          $circle.data('actual-step', step);
         }
       }
     }
