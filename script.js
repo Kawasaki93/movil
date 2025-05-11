@@ -234,11 +234,7 @@ for (var x = 1; x < 126; x++) {
     cloned_element.find(".sunbed_name").html(1);
 } else if (x === 125) {
     cloned_element.find(".sunbed_name").html(0);
-
-
-
 }
-
 
   $(".beach_wrapper").append(cloned_element);
 }
@@ -1289,6 +1285,81 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!menu.contains(e.target) && e.target !== menuToggle) {
         menu.style.display = 'none';
       }
+    });
+  }
+});
+
+// === FUNCIONES FIREBASE REALTIME ===
+
+// Guardar nombre de cliente
+function guardarNombreCliente(clonId, nombre) {
+  db.ref('sunbeds/' + clonId).update({ customer_name: nombre });
+}
+
+// Guardar color/step de sunbed
+function guardarColorSunbed(clonId, colorStep) {
+  db.ref('sunbeds/' + clonId).update({ color: colorStep });
+}
+
+// Guardar color/step de circle
+function guardarStepCircle(circleId, step) {
+  db.ref('circles/' + circleId).set({ step: step });
+}
+
+// Guardar historial de pagos
+function guardarHistorialPago(data) {
+  const newRef = db.ref('historial').push();
+  newRef.set(data);
+}
+
+// === ESCUCHAR CAMBIOS EN TIEMPO REAL ===
+
+// Sincronizar colores y nombres de hamacas
+db.ref('sunbeds').on('value', (snapshot) => {
+  const sunbeds = snapshot.val();
+  for (const clonId in sunbeds) {
+    const color = sunbeds[clonId].color;
+    const nombre = sunbeds[clonId].customer_name;
+    // Solo actualiza si existe en el DOM
+    const $hamaca = $('#' + clonId);
+    if ($hamaca.length) {
+      $hamaca.removeClass('step1 step2 step3 step4 step5 step6');
+      if (color) $hamaca.addClass('step' + color);
+      $hamaca.find('.customer_name').val(nombre || '');
+    } else {
+      // Si no existe en el DOM, elimina la hamaca de Firebase
+      db.ref('sunbeds/' + clonId).remove();
+    }
+  }
+});
+
+// Sincronizar steps de círculos
+db.ref('circles').on('value', (snapshot) => {
+  const circles = snapshot.val();
+  for (const circleId in circles) {
+    const step = circles[circleId].step;
+    const $circle = $('#' + circleId);
+    if ($circle.length) {
+      $circle.removeClass('step1 step2 step3');
+      if (step) $circle.addClass('step' + step);
+    }
+  }
+});
+
+// Sincronizar historial de pagos
+db.ref('historial').on('value', (snapshot) => {
+  const historial = snapshot.val();
+  const $historial = $('#historial');
+  $historial.empty();
+  if (historial) {
+    Object.values(historial).reverse().forEach(entry => {
+      const li = document.createElement('li');
+      if (entry.devolucion) {
+        li.textContent = `Devolución Hamaca ${entry.hamaca} - Total: €${entry.total} - Devolución: €${entry.devolucion} - Método: ${entry.metodo} - ${entry.fecha}`;
+      } else {
+        li.textContent = `Hamaca ${entry.hamaca} - Total: €${entry.total} - Recibido: €${entry.recibido} - Cambio: €${entry.cambio} - Método: ${entry.metodo} - ${entry.fecha}`;
+      }
+      $historial.prepend(li);
     });
   }
 });

@@ -136,5 +136,23 @@
   </div>
 </div>
 <!-- Fin botonera anclada abajo -->
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  // Configuración de Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyBpTV1quq0mX0fQ9f33a0n3SMHFvFUknek",
+    authDomain: "movil-26943.firebaseapp.com",
+    projectId: "movil-26943",
+    storageBucket: "movil-26943.firebasestorage.app",
+    messagingSenderId: "978593311158",
+    appId: "1:978593311158:web:7464a2e217a70ee215b917"
+  };
+  // Inicializar Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+</script>
 </body>
 </html>
