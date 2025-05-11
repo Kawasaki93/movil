@@ -1116,30 +1116,90 @@ setupColorCycle('.sunbed', 6, 'sunbed_color_');
 document.addEventListener('DOMContentLoaded', function() {
     const contextMenu = document.getElementById('colorContextMenu');
     let activeSunbed = null;
+    let touchTimer = null;
+    const LONG_PRESS_DURATION = 500; // 500ms para activar el menú en dispositivos táctiles
 
-    // Mostrar menú contextual al hacer clic derecho o mantener pulsado
+    // Función para mostrar el menú contextual
+    function showContextMenu(e, sunbed) {
+        e.preventDefault();
+        activeSunbed = sunbed;
+        
+        // Obtener la posición de la sunbed
+        const sunbedRect = sunbed.getBoundingClientRect();
+        const menuRect = contextMenu.getBoundingClientRect();
+        
+        // Calcular la posición óptima para el menú
+        let left = sunbedRect.left + window.scrollX;
+        let top = sunbedRect.top + window.scrollY - menuRect.height - 10;
+        
+        // Asegurar que el menú no se salga de la pantalla
+        if (left + menuRect.width > window.innerWidth) {
+            left = window.innerWidth - menuRect.width - 10;
+        }
+        if (top < 0) {
+            top = sunbedRect.bottom + window.scrollY + 10;
+        }
+        
+        contextMenu.style.left = left + 'px';
+        contextMenu.style.top = top + 'px';
+        contextMenu.style.display = 'block';
+        contextMenu.classList.add('visible');
+        
+        // Marcar la opción actualmente seleccionada
+        const currentStep = sunbed.dataset.actualStep;
+        if (currentStep) {
+            contextMenu.querySelectorAll('.color-option').forEach(option => {
+                option.classList.toggle('selected', option.dataset.step === currentStep);
+            });
+        }
+    }
+
+    // Evento para clic derecho
     document.addEventListener('contextmenu', function(e) {
         const sunbed = e.target.closest('.sunbed');
         if (sunbed) {
-            e.preventDefault();
-            activeSunbed = sunbed;
-            contextMenu.style.display = 'block';
-            
-            // Obtener la posición de la sunbed
-            const sunbedRect = sunbed.getBoundingClientRect();
-            
-            // Posicionar el menú justo encima de la sunbed
-            contextMenu.style.left = (sunbedRect.left + window.scrollX) + 'px';
-            contextMenu.style.top = (sunbedRect.top + window.scrollY - contextMenu.offsetHeight - 10) + 'px';
+            showContextMenu(e, sunbed);
+        }
+    });
+
+    // Eventos para dispositivos táctiles
+    document.addEventListener('touchstart', function(e) {
+        const sunbed = e.target.closest('.sunbed');
+        if (sunbed) {
+            touchTimer = setTimeout(() => {
+                showContextMenu(e, sunbed);
+            }, LONG_PRESS_DURATION);
+        }
+    });
+
+    document.addEventListener('touchend', function() {
+        if (touchTimer) {
+            clearTimeout(touchTimer);
+            touchTimer = null;
+        }
+    });
+
+    document.addEventListener('touchmove', function() {
+        if (touchTimer) {
+            clearTimeout(touchTimer);
+            touchTimer = null;
         }
     });
 
     // Cerrar menú al hacer clic en cualquier lugar
     document.addEventListener('click', function(e) {
         if (!contextMenu.contains(e.target)) {
-            contextMenu.style.display = 'none';
+            hideContextMenu();
         }
     });
+
+    // Función para ocultar el menú
+    function hideContextMenu() {
+        contextMenu.classList.remove('visible');
+        setTimeout(() => {
+            contextMenu.style.display = 'none';
+        }, 200);
+    }
 
     // Manejar la selección de color
     contextMenu.addEventListener('click', function(e) {
@@ -1160,15 +1220,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const sunbedId = activeSunbed.id;
             localStorage.setItem('sunbed_color' + sunbedId, step);
             
-            // Ocultar menú
-            contextMenu.style.display = 'none';
+            // Feedback táctil en dispositivos móviles
+            if ('vibrate' in navigator) {
+                navigator.vibrate(50);
+            }
+            
+            // Ocultar menú con animación
+            hideContextMenu();
+        }
+    });
+
+    // Soporte para teclado
+    contextMenu.addEventListener('keydown', function(e) {
+        const colorOption = e.target.closest('.color-option');
+        if (colorOption && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            colorOption.click();
         }
     });
 
     // Cerrar menú al hacer scroll
-    window.addEventListener('scroll', function() {
-        contextMenu.style.display = 'none';
-    });
+    window.addEventListener('scroll', hideContextMenu);
+
+    // Cerrar menú al cambiar de orientación
+    window.addEventListener('orientationchange', hideContextMenu);
 });
 
 // Función para cargar los estados de las hamacas desde localStorage
