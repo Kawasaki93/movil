@@ -884,7 +884,7 @@ input, textarea {
     z-index: 1003 !important;
     width: 90px;
     height: 90px;
-    font-size: 3rem;
+    font-size: 3.6rem;
     box-shadow: 0 8px 32px rgba(0,0,0,0.28);
     pointer-events: auto;
   }
@@ -919,10 +919,46 @@ input, textarea {
   .menu-desplegable button {
     width: 96vw;
     max-width: 500px;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     padding: 22px 0;
     border-radius: 16px;
     margin: 0 auto;
     display: block;
+  }
+  .menu-desplegable button i, .fab i {
+    font-size: 2.4rem;
+  }
+  .calculator-footer {
+    font-size: 55px;
+    padding-left: 110px;
+    padding-right: 110px;
+    padding-bottom: 2200px;
+    margin-top: 1320px;
+    border-radius: 88px;
+  }
+  .calculator-footer h2 {
+    font-size: 37.4px;
+  }
+  .calculator-footer label {
+    font-size: 44px;
+  }
+  .calculator-footer input,
+  .calculator-footer select {
+    font-size: 44px;
+    padding: 13.2px;
+  }
+  .calculator-footer button {
+    font-size: 33px;
+    padding: 15.4px 26.4px;
+  }
+  .cambio {
+    font-size: 77px;
+  }
+  .registro p {
+    font-size: 37.4px;
+  }
+  .button-container button {
+    font-size: 28.6px;
+    padding: 13.2px 22px;
   }
 }
