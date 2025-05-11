@@ -914,7 +914,7 @@ if ('serviceWorker' in navigator) {
 function setupColorCycle(selector, stepsCount, storagePrefix) {
     $(selector).each(function (index) {
         const el = $(this);
-        const storageKey = storagePrefix + index;
+        const isCircle = el.hasClass('circle');
 
         el.on('dblclick', function (event) {
             event.stopPropagation();
@@ -931,19 +931,14 @@ function setupColorCycle(selector, stepsCount, storagePrefix) {
             el.addClass('step' + newStep);
             el.data('actual-step', newStep);
 
-            // Guardar en localStorage
-            localStorage.setItem(storageKey, newStep);
-        });
-
-        // Restaurar estado desde localStorage
-        const savedStep = localStorage.getItem(storageKey);
-        if (savedStep) {
-            for (let i = 1; i <= stepsCount; i++) {
-                el.removeClass('step' + i);
+            // Guardar en Firebase
+            if (isCircle) {
+                guardarStepCircle(el.attr('id'), newStep);
+            } else {
+                guardarColorSunbed(el.attr('id'), newStep);
             }
-            el.addClass('step' + savedStep);
-            el.data('actual-step', savedStep);
-        }
+        });
+        // No restaurar desde localStorage, el listener de Firebase lo hace
     });
 }
 
@@ -1058,7 +1053,7 @@ document.addEventListener('DOMContentLoaded', function() {
             activeSunbed.classList.add('step' + step);
             activeSunbed.dataset.actualStep = step;
             
-            // Guardar en localStorage
+            // Guardar en Firebase
             const sunbedId = activeSunbed.id;
             guardarColorSunbed(sunbedId, step);
             
@@ -1196,5 +1191,36 @@ $(document).ready(function() {
         $historial.prepend(li);
       });
     }
+  });
+});
+
+// --- Sincronización del registro total ---
+$(document).ready(function() {
+  db.ref('historial').on('value', (snapshot) => {
+    const historial = snapshot.val();
+    let totalEfectivo = 0;
+    let totalTarjeta = 0;
+    if (historial) {
+      Object.values(historial).forEach(entry => {
+        if (!entry.devolucion) {
+          const total = parseFloat(entry.total);
+          if (entry.metodo === 'efectivo') {
+            totalEfectivo += total;
+          } else {
+            totalTarjeta += total;
+          }
+        } else {
+          const total = parseFloat(entry.total);
+          if (entry.metodo === 'efectivo') {
+            totalEfectivo -= total;
+          } else {
+            totalTarjeta -= total;
+          }
+        }
+      });
+    }
+    $("#totalEfectivo").text(totalEfectivo.toFixed(2));
+    $("#totalTarjeta").text(totalTarjeta.toFixed(2));
+    $("#totalGeneral").text((totalEfectivo + totalTarjeta).toFixed(2));
   });
 });
