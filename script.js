@@ -404,14 +404,6 @@ window.onload = function() {
   circles.forEach(circle => {
     circle.style.display = circlesVisible ? 'block' : 'none';
   });
-
-  // Restaurar el color de los círculos desde localStorage
-  document.querySelectorAll('.circle').forEach(circle => {
-    const savedColorStep = localStorage.getItem('circle_color_' + circle.id);
-    if (savedColorStep) {
-      circle.classList.add('step' + savedColorStep); // Aplicar la clase de color guardada
-    }
-  });
 };
 
 // Función para alternar la visibilidad de los círculos y guardar el estado
@@ -938,7 +930,6 @@ function setupColorCycle(selector, stepsCount, storagePrefix) {
                 guardarColorSunbed(el.attr('id'), newStep);
             }
         });
-        // No restaurar desde localStorage, el listener de Firebase lo hace
     });
 }
 
@@ -1165,12 +1156,17 @@ $(document).ready(function() {
   // Sincronizar steps de círculos
   db.ref('circles').on('value', (snapshot) => {
     const circles = snapshot.val();
-    for (const circleId in circles) {
-      const step = circles[circleId].step;
-      const $circle = $('#' + circleId);
-      if ($circle.length) {
-        $circle.removeClass('step1 step2 step3');
-        if (step) $circle.addClass('step' + step);
+    if (circles) {
+      for (const circleId in circles) {
+        const step = circles[circleId].step;
+        const $circle = $('#' + circleId);
+        if ($circle.length) {
+          $circle.removeClass('step1 step2 step3');
+          if (step) {
+            $circle.addClass('step' + step);
+            $circle.data('actual-step', step);
+          }
+        }
       }
     }
   });
