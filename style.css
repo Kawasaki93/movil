@@ -875,47 +875,53 @@ input, textarea {
 }
 
 @media (max-width: 600px) {
+  .fab {
+    position: fixed !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    bottom: 20px !important;
+    margin: 0 !important;
+    z-index: 1003 !important;
+    width: 90px;
+    height: 90px;
+    font-size: 3rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+    pointer-events: auto;
+  }
   .botonera-fija {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    position: static !important;
     width: 100vw;
-    height: 80px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
+    height: auto;
+    background: transparent;
     padding: 0;
     margin: 0;
-    z-index: 1002;
-    background: transparent;
-    pointer-events: none;
-  }
-  .fab {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 8px;
-    margin: 0;
-    z-index: 1003;
-    pointer-events: auto;
+    z-index: 1;
+    display: block;
   }
   .menu-desplegable {
     width: 100vw;
     left: 0;
     right: 0;
     transform: none;
-    bottom: 80px;
+    bottom: 110px;
     border-radius: 18px 18px 0 0;
-    max-height: 60vh;
+    max-height: 65vh;
     overflow-y: auto;
     position: fixed;
     margin: 0;
-    padding: 18px 0 10px 0;
+    padding: 22px 0 16px 0;
     z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
   }
   .menu-desplegable button {
-    width: 90vw;
+    width: 96vw;
+    max-width: 500px;
+    font-size: 1.5rem;
+    padding: 22px 0;
+    border-radius: 16px;
     margin: 0 auto;
     display: block;
   }
