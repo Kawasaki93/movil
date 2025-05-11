@@ -12,6 +12,12 @@ for (var x = 1; x < 126; x++) {
   let cloned_element = $(".sunbed").first().clone();
   cloned_element.attr("id", "clon_" + x);
 
+  // Clonar los círculos también
+  const circles = cloned_element.find('.circle');
+  circles.each(function(index) {
+    $(this).attr('id', 'circle_' + x + '_' + (index + 1));
+  });
+
   if (x === 10) {
     cloned_element.find(".sunbed_name").html(82); // Asigna 85 al clon número 10
 } else if (x === 9) {
