@@ -1183,6 +1183,9 @@ function scrollHistorial(direction) {
 document.addEventListener('DOMContentLoaded', function() {
   const menuToggle = document.getElementById('menu-toggle');
   const menu = document.getElementById('menu');
+  if (menu) {
+    menu.style.display = 'none'; // Ocultar el menú por defecto al cargar
+  }
   if (menuToggle && menu) {
     menuToggle.addEventListener('click', function(e) {
       e.stopPropagation();
