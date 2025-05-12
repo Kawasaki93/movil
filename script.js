@@ -1257,7 +1257,30 @@ function guardarStepCircle(circleId, step) {
 // Guardar historial de pagos en Firebase en vez de localStorage
 function guardarHistorialPago(data) {
   const newRef = db.ref('historial').push();
-  newRef.set(data);
+  const timestamp = new Date().toISOString();
+  
+  // Asegurarse de que todos los campos necesarios estén presentes
+  const historialData = {
+    ...data,
+    timestamp,
+    fecha: data.fecha || timestamp,
+    total: data.total || '0',
+    recibido: data.recibido || '0',
+    cambio: data.cambio || '0',
+    metodo: data.metodo || 'efectivo',
+    hamaca: data.hamaca || '-',
+    sombrillaExtra: data.sombrillaExtra || false
+  };
+
+  console.log('Guardando en historial:', historialData);
+  
+  newRef.set(historialData)
+    .then(() => {
+      console.log('Datos guardados correctamente en historial');
+    })
+    .catch(error => {
+      console.error('Error al guardar en historial:', error);
+    });
 }
 
 // === ESCUCHAR CAMBIOS EN TIEMPO REAL ===
