@@ -585,6 +585,15 @@ var SunbedController = function() {
                     loadingIndicator.textContent = 'Reseteando colores...';
                     document.body.appendChild(loadingIndicator);
 
+                    // Desactivar Service Worker temporalmente
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                            for(let registration of registrations) {
+                                registration.unregister();
+                            }
+                        });
+                    }
+
                     // Primero obtener todos los datos actuales
                     db.ref('sunbeds').once('value')
                         .then((snapshot) => {
@@ -617,10 +626,19 @@ var SunbedController = function() {
                             // Remover indicador de carga
                             document.body.removeChild(loadingIndicator);
 
+                            // Limpiar caché del Service Worker
+                            if ('caches' in window) {
+                                caches.keys().then(function(names) {
+                                    for (let name of names) {
+                                        caches.delete(name);
+                                    }
+                                });
+                            }
+
                             // Forzar actualización de la interfaz
                             setTimeout(() => {
                                 window.location.reload();
-                            }, 1500);
+                            }, 2000);
                         })
                         .catch((error) => {
                             // Remover indicador de carga en caso de error
@@ -977,6 +995,15 @@ function reiniciarCalculadora() {
             loadingIndicator.textContent = 'Reiniciando calculadora...';
             document.body.appendChild(loadingIndicator);
 
+            // Desactivar Service Worker temporalmente
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                        registration.unregister();
+                    }
+                });
+            }
+
             // Borrar historial y totales en Firebase
             const promises = [
                 // Borrar todo el historial de pagos
@@ -1015,10 +1042,19 @@ function reiniciarCalculadora() {
                     // Remover indicador de carga
                     document.body.removeChild(loadingIndicator);
 
+                    // Limpiar caché del Service Worker
+                    if ('caches' in window) {
+                        caches.keys().then(function(names) {
+                            for (let name of names) {
+                                caches.delete(name);
+                            }
+                        });
+                    }
+
                     // Forzar actualización de la interfaz
                     setTimeout(() => {
                         window.location.reload();
-                    }, 1500);
+                    }, 2000);
 
                     console.log("Calculadora reiniciada correctamente");
                 })
