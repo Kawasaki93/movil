@@ -858,19 +858,27 @@ function toggleHistorial() {
 }
 
 function descargarHistorial() {
-  // Obtener datos de Firebase
+  console.log('Iniciando descarga de historial...');
   db.ref('historial').once('value').then((snapshot) => {
     if (!snapshot.exists()) {
+      console.log('No hay datos en el historial');
       alert('No hay datos en el historial para descargar');
       return;
     }
 
     const historialData = snapshot.val();
+    console.log('Datos obtenidos:', historialData);
     const resumenDiario = {};
     const resumenMensual = {};
 
     // Procesar los datos
-    Object.values(historialData).forEach(entry => {
+    Object.entries(historialData).forEach(([key, entry]) => {
+      console.log('Procesando entrada:', entry);
+      if (!entry.fecha) {
+        console.log('Entrada sin fecha, saltando:', entry);
+        return;
+      }
+
       // Convertir la fecha del formato DD/MM/YYYY HH:MM a objeto Date
       const [fechaPart, horaPart] = entry.fecha.split(' ');
       const [dia, mes, anio] = fechaPart.split('/');
@@ -879,7 +887,7 @@ function descargarHistorial() {
       const diaClave = `${String(fecha.getDate()).padStart(2, '0')}/${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
       const mesClave = `${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
       const total = parseFloat(entry.total || 0);
-      const metodo = entry.metodo;
+      const metodo = entry.metodo || 'efectivo';
 
       if (!resumenDiario[diaClave]) {
         resumenDiario[diaClave] = { efectivo: 0, tarjeta: 0 };
@@ -909,6 +917,9 @@ function descargarHistorial() {
       }
     });
 
+    console.log('Resumen diario:', resumenDiario);
+    console.log('Resumen mensual:', resumenMensual);
+
     // Generar CSV
     let csv = "Resumen Diario\nDía,Efectivo,Tarjeta,Total\n";
     for (let dia in resumenDiario) {
@@ -921,6 +932,8 @@ function descargarHistorial() {
       const m = resumenMensual[mes];
       csv += `${mes},${m.efectivo.toFixed(2)},${m.tarjeta.toFixed(2)},${(m.efectivo + m.tarjeta).toFixed(2)}\n`;
     }
+
+    console.log('CSV generado:', csv);
 
     // Crear y descargar el archivo
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -938,27 +951,38 @@ function descargarHistorial() {
 }
 
 function descargarLog() {
-  // Obtener datos de Firebase
+  console.log('Iniciando descarga de log...');
   db.ref('historial').once('value').then((snapshot) => {
     if (!snapshot.exists()) {
+      console.log('No hay datos en el log');
       alert('No hay datos en el log para descargar');
       return;
     }
 
     const historialData = snapshot.val();
-    let csv = "Fecha,Hora,Hamaca,Total,Pago,Cambio,Método\n";
+    console.log('Datos obtenidos:', historialData);
+    let csv = "Fecha,Hora,Hamaca,Total,Pago,Cambio,Método,Sombrilla Extra\n";
 
     // Procesar los datos
-    Object.values(historialData).forEach(entry => {
+    Object.entries(historialData).forEach(([key, entry]) => {
+      console.log('Procesando entrada:', entry);
+      if (!entry.fecha) {
+        console.log('Entrada sin fecha, saltando:', entry);
+        return;
+      }
+
       const [fechaPart, horaPart] = entry.fecha.split(' ');
       const total = entry.total || '0';
       const pago = entry.recibido || '0';
       const cambio = entry.cambio || '0';
       const metodo = entry.metodo || 'N/A';
       const hamaca = entry.hamaca || 'N/A';
+      const sombrillaExtra = entry.sombrillaExtra ? 'Sí' : 'No';
 
-      csv += `${fechaPart},${horaPart},${hamaca},${total},${pago},${cambio},${metodo}\n`;
+      csv += `${fechaPart},${horaPart},${hamaca},${total},${pago},${cambio},${metodo},${sombrillaExtra}\n`;
     });
+
+    console.log('CSV generado:', csv);
 
     // Crear y descargar el archivo
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
