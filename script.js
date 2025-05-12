@@ -285,12 +285,9 @@ $("#clon_83,#clon_84,#clon_85,#clon_89,#clon_90,#clon_91,#clon_92,#clon_93,#clon
 
 //clear localstorage
 function clearClick() {
-    if (confirm("¿Estás seguro de que deseas borrar TODOS los datos? Esta acción eliminará todos los colores, nombres de clientes, historial de pagos y registros totales.")) {
-        // Borrar todos los datos en Firebase
+    if (confirm("¿Estás seguro de que deseas borrar TODOS los datos? Esta acción eliminará todos los colores, nombres de clientes y registros totales. El historial de pagos se mantendrá.")) {
+        // Borrar todos los datos en Firebase excepto el historial
         const promises = [
-            // Borrar historial de pagos
-            db.ref('historial').remove(),
-            
             // Borrar totales
             db.ref('totales').remove().then(() => {
                 return db.ref('totales').set({
@@ -334,7 +331,7 @@ function clearClick() {
 
         Promise.all(promises)
             .then(() => {
-                console.log("Todos los datos han sido borrados correctamente");
+                console.log("Datos reseteados correctamente");
                 
                 // Resetear la interfaz
                 document.querySelectorAll('.sunbed').forEach(hamaca => {
@@ -352,9 +349,6 @@ function clearClick() {
                     circle.classList.remove('step1', 'step2', 'step3');
                     circle.classList.add('step1');
                 });
-
-                // Limpiar historial
-                document.getElementById('historial').innerHTML = '';
                 
                 // Resetear totales mostrados
                 document.getElementById('totalEfectivo').textContent = '0.00';
@@ -369,8 +363,8 @@ function clearClick() {
                 window.location.reload();
             })
             .catch(error => {
-                console.error("Error al borrar los datos:", error);
-                alert("Hubo un error al borrar los datos. Por favor, inténtalo de nuevo.");
+                console.error("Error al resetear los datos:", error);
+                alert("Hubo un error al resetear los datos. Por favor, inténtalo de nuevo.");
             });
     }
 }
@@ -563,7 +557,7 @@ var SunbedController = function() {
             $("#total_price_value").html(total_sold);
         },
 
-        reset_local_storage_except_customers: function () {           
+        reset_local_storage_except_customers: function() {           
             try {
                 // Asegurarse de que db está inicializado
                 if (!db) {
@@ -855,6 +849,61 @@ function procesarDevolucion() {
 function toggleHistorial() {
   const historialContainer = document.getElementById('historialContainer');
   historialContainer.style.display = historialContainer.style.display === 'none' ? 'block' : 'none';
+}
+
+function mostrarHistorialResumen() {
+  const historialContainer = document.getElementById('historialContainer');
+  const historial = document.getElementById('historial');
+  
+  if (!historialContainer || !historial) {
+    console.error('No se encontraron los elementos del historial');
+    return;
+  }
+
+  // Mostrar el contenedor
+  historialContainer.style.display = 'block';
+  
+  // Limpiar el historial actual
+  historial.innerHTML = '';
+  
+  // Obtener el historial de Firebase
+  db.ref('historial').once('value').then((snapshot) => {
+    if (snapshot.exists()) {
+      const historialData = snapshot.val();
+      const historialArray = Object.entries(historialData)
+        .map(([id, data]) => ({
+          id,
+          ...data
+        }))
+        .sort((a, b) => {
+          // Ordenar por fecha, más reciente primero
+          const fechaA = new Date(a.fecha.split(' ')[0].split('/').reverse().join('-'));
+          const fechaB = new Date(b.fecha.split(' ')[0].split('/').reverse().join('-'));
+          return fechaB - fechaA;
+        });
+
+      if (historialArray.length === 0) {
+        historial.innerHTML = '<li>No hay registros en el historial</li>';
+        return;
+      }
+
+      historialArray.forEach(registro => {
+        const li = document.createElement('li');
+        if (registro.devolucion) {
+          li.textContent = `Devolución Hamaca ${registro.hamaca} - Total: €${registro.total} - Devolución: €${registro.devolucion} - Método: ${registro.metodo} - ${registro.fecha}`;
+        } else {
+          const sombrillaInfo = registro.sombrillaExtra ? ' (Sombrilla Extra)' : '';
+          li.textContent = `Hamaca ${registro.hamaca} - Total: €${registro.total}${sombrillaInfo} - Recibido: €${registro.recibido} - Cambio: €${registro.cambio} - Método: ${registro.metodo} - ${registro.fecha}`;
+        }
+        historial.appendChild(li);
+      });
+    } else {
+      historial.innerHTML = '<li>No hay registros en el historial</li>';
+    }
+  }).catch(error => {
+    console.error('Error al obtener el historial:', error);
+    historial.innerHTML = '<li>Error al cargar el historial</li>';
+  });
 }
 
 function descargarHistorial() {
@@ -1469,66 +1518,4 @@ function showCustomDialog(message, onConfirm, onCancel) {
         document.body.removeChild(dialog);
         if (onCancel) onCancel();
     };
-}
-
-function mostrarHistorialResumen() {
-  const historialContainer = document.getElementById('historialContainer');
-  const historial = document.getElementById('historial');
-  
-  if (!historialContainer || !historial) {
-    console.error('No se encontraron los elementos del historial');
-    return;
-  }
-
-  // Mostrar el contenedor
-  historialContainer.style.display = 'block';
-  
-  // Limpiar el historial actual
-  historial.innerHTML = '';
-  
-  // Obtener el historial de Firebase
-  const historialRef = ref(db, 'historial');
-  get(historialRef).then((snapshot) => {
-    if (snapshot.exists()) {
-      const historialData = snapshot.val();
-      const historialArray = Object.entries(historialData)
-        .map(([id, data]) => ({
-          id,
-          ...data,
-          timestamp: data.timestamp || 0
-        }))
-        .sort((a, b) => b.timestamp - a.timestamp);
-
-      if (historialArray.length === 0) {
-        historial.innerHTML = '<li>No hay registros en el historial</li>';
-        return;
-      }
-
-      historialArray.forEach(registro => {
-        const li = document.createElement('li');
-        const fecha = new Date(registro.timestamp);
-        const fechaFormateada = fecha.toLocaleString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        
-        li.innerHTML = `
-          <strong>${fechaFormateada}</strong><br>
-          Cliente: ${registro.cliente}<br>
-          Importe: ${registro.importe}€<br>
-          Pago: ${registro.pago}€<br>
-          Cambio: ${registro.cambio}€
-        `;
-        historial.appendChild(li);
-      });
-    } else {
-      historial.innerHTML = '<li>No hay registros en el historial</li>';
-    }
-  }).catch(error => {
-    console.error('Error al obtener el historial:', error);
-    historial.innerHTML = '<li>Error al cargar el historial</li>';
-  });
 }
