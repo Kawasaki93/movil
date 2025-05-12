@@ -590,20 +590,39 @@ var SunbedController = function() {
                     hamaca.classList.add('step1');
                 });
 
-                // Luego, actualizar Firebase
-                db.ref('sunbeds').once('value').then((snapshot) => {
-                    const updates = {};
-                    snapshot.forEach((childSnapshot) => {
-                        const sunbedId = childSnapshot.key;
-                        const data = childSnapshot.val();
-                        updates[sunbedId] = {
-                            ...data,
-                            color: 'green'
-                        };
-                    });
+                // Resetear también los círculos en la interfaz
+                document.querySelectorAll('.circle').forEach(circle => {
+                    circle.classList.remove('step1', 'step2', 'step3');
+                    circle.classList.add('step1');
+                });
 
-                    return db.ref('sunbeds').update(updates);
-                }).then(() => {
+                // Luego, actualizar Firebase
+                Promise.all([
+                    // Actualizar hamacas
+                    db.ref('sunbeds').once('value').then((snapshot) => {
+                        const updates = {};
+                        snapshot.forEach((childSnapshot) => {
+                            const sunbedId = childSnapshot.key;
+                            const data = childSnapshot.val();
+                            updates[sunbedId] = {
+                                ...data,
+                                color: 'green'
+                            };
+                        });
+                        return db.ref('sunbeds').update(updates);
+                    }),
+                    // Actualizar círculos
+                    db.ref('circles').once('value').then((snapshot) => {
+                        const updates = {};
+                        snapshot.forEach((childSnapshot) => {
+                            const circleId = childSnapshot.key;
+                            updates[circleId] = {
+                                step: '1'
+                            };
+                        });
+                        return db.ref('circles').update(updates);
+                    })
+                ]).then(() => {
                     // Remover indicador de carga
                     document.body.removeChild(loadingIndicator);
                     
