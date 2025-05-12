@@ -571,6 +571,20 @@ var SunbedController = function() {
                         throw new Error('Firebase no está inicializado');
                     }
 
+                    // Mostrar indicador de carga
+                    const loadingIndicator = document.createElement('div');
+                    loadingIndicator.style.position = 'fixed';
+                    loadingIndicator.style.top = '50%';
+                    loadingIndicator.style.left = '50%';
+                    loadingIndicator.style.transform = 'translate(-50%, -50%)';
+                    loadingIndicator.style.padding = '20px';
+                    loadingIndicator.style.background = 'rgba(0,0,0,0.8)';
+                    loadingIndicator.style.color = 'white';
+                    loadingIndicator.style.borderRadius = '10px';
+                    loadingIndicator.style.zIndex = '9999';
+                    loadingIndicator.textContent = 'Reseteando colores...';
+                    document.body.appendChild(loadingIndicator);
+
                     // Primero obtener todos los datos actuales
                     db.ref('sunbeds').once('value')
                         .then((snapshot) => {
@@ -600,12 +614,19 @@ var SunbedController = function() {
                             });
                             console.log("Colores de todas las hamacas reseteados a verde (step1)");
                             
+                            // Remover indicador de carga
+                            document.body.removeChild(loadingIndicator);
+
                             // Forzar actualización de la interfaz
                             setTimeout(() => {
                                 window.location.reload();
-                            }, 1000);
+                            }, 1500);
                         })
                         .catch((error) => {
+                            // Remover indicador de carga en caso de error
+                            if (document.body.contains(loadingIndicator)) {
+                                document.body.removeChild(loadingIndicator);
+                            }
                             console.error("Error al resetear colores:", error);
                             alert("Hubo un error al resetear los colores. Por favor, inténtalo de nuevo.");
                         });
@@ -942,6 +963,20 @@ function reiniciarCalculadora() {
                 throw new Error('Firebase no está inicializado');
             }
 
+            // Mostrar indicador de carga
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.style.position = 'fixed';
+            loadingIndicator.style.top = '50%';
+            loadingIndicator.style.left = '50%';
+            loadingIndicator.style.transform = 'translate(-50%, -50%)';
+            loadingIndicator.style.padding = '20px';
+            loadingIndicator.style.background = 'rgba(0,0,0,0.8)';
+            loadingIndicator.style.color = 'white';
+            loadingIndicator.style.borderRadius = '10px';
+            loadingIndicator.style.zIndex = '9999';
+            loadingIndicator.textContent = 'Reiniciando calculadora...';
+            document.body.appendChild(loadingIndicator);
+
             // Borrar historial y totales en Firebase
             const promises = [
                 // Borrar todo el historial de pagos
@@ -977,14 +1012,21 @@ function reiniciarCalculadora() {
                     totalEfectivo = 0;
                     totalTarjeta = 0;
 
+                    // Remover indicador de carga
+                    document.body.removeChild(loadingIndicator);
+
                     // Forzar actualización de la interfaz
                     setTimeout(() => {
                         window.location.reload();
-                    }, 1000);
+                    }, 1500);
 
                     console.log("Calculadora reiniciada correctamente");
                 })
                 .catch(error => {
+                    // Remover indicador de carga en caso de error
+                    if (document.body.contains(loadingIndicator)) {
+                        document.body.removeChild(loadingIndicator);
+                    }
                     console.error("Error al reiniciar la calculadora:", error);
                     alert("Hubo un error al reiniciar la calculadora. Por favor, inténtalo de nuevo.");
                 });
