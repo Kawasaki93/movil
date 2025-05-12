@@ -564,70 +564,65 @@ var SunbedController = function() {
         },
 
         reset_local_storage_except_customers: function () {           
-            showCustomDialog(
-                "¿Estás seguro de que deseas poner todas las hamacas en verde (disponible)? Esta acción no afecta los nombres de los clientes.",
-                () => {
-                    try {
-                        // Asegurarse de que db está inicializado
-                        if (!db) {
-                            throw new Error('Firebase no está inicializado');
-                        }
-
-                        // Mostrar indicador de carga
-                        const loadingIndicator = document.createElement('div');
-                        loadingIndicator.style.position = 'fixed';
-                        loadingIndicator.style.top = '50%';
-                        loadingIndicator.style.left = '50%';
-                        loadingIndicator.style.transform = 'translate(-50%, -50%)';
-                        loadingIndicator.style.padding = '20px';
-                        loadingIndicator.style.background = 'rgba(0,0,0,0.8)';
-                        loadingIndicator.style.color = 'white';
-                        loadingIndicator.style.borderRadius = '10px';
-                        loadingIndicator.style.zIndex = '9999';
-                        loadingIndicator.textContent = 'Reseteando colores...';
-                        document.body.appendChild(loadingIndicator);
-
-                        // Primero, actualizar la interfaz local
-                        document.querySelectorAll('.sunbed').forEach(hamaca => {
-                            hamaca.classList.remove('step1', 'step2', 'step3', 'step4', 'step5', 'step6');
-                            hamaca.classList.add('step1');
-                        });
-
-                        // Luego, actualizar Firebase
-                        db.ref('sunbeds').once('value').then((snapshot) => {
-                            const updates = {};
-                            snapshot.forEach((childSnapshot) => {
-                                const sunbedId = childSnapshot.key;
-                                const data = childSnapshot.val();
-                                updates[sunbedId] = {
-                                    ...data,
-                                    color: 'green'
-                                };
-                            });
-
-                            return db.ref('sunbeds').update(updates);
-                        }).then(() => {
-                            // Remover indicador de carga
-                            document.body.removeChild(loadingIndicator);
-                            
-                            // Forzar actualización de la interfaz
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 2000);
-                        }).catch((error) => {
-                            // Remover indicador de carga en caso de error
-                            if (document.body.contains(loadingIndicator)) {
-                                document.body.removeChild(loadingIndicator);
-                            }
-                            console.error("Error al resetear colores:", error);
-                            alert("Hubo un error al resetear los colores. Por favor, inténtalo de nuevo.");
-                        });
-                    } catch (error) {
-                        console.error("Error de inicialización:", error);
-                        alert("Error al inicializar Firebase. Por favor, recarga la página e inténtalo de nuevo.");
-                    }
+            try {
+                // Asegurarse de que db está inicializado
+                if (!db) {
+                    throw new Error('Firebase no está inicializado');
                 }
-            );
+
+                // Mostrar indicador de carga
+                const loadingIndicator = document.createElement('div');
+                loadingIndicator.style.position = 'fixed';
+                loadingIndicator.style.top = '50%';
+                loadingIndicator.style.left = '50%';
+                loadingIndicator.style.transform = 'translate(-50%, -50%)';
+                loadingIndicator.style.padding = '20px';
+                loadingIndicator.style.background = 'rgba(0,0,0,0.8)';
+                loadingIndicator.style.color = 'white';
+                loadingIndicator.style.borderRadius = '10px';
+                loadingIndicator.style.zIndex = '9999';
+                loadingIndicator.textContent = 'Reseteando colores...';
+                document.body.appendChild(loadingIndicator);
+
+                // Primero, actualizar la interfaz local
+                document.querySelectorAll('.sunbed').forEach(hamaca => {
+                    hamaca.classList.remove('step1', 'step2', 'step3', 'step4', 'step5', 'step6');
+                    hamaca.classList.add('step1');
+                });
+
+                // Luego, actualizar Firebase
+                db.ref('sunbeds').once('value').then((snapshot) => {
+                    const updates = {};
+                    snapshot.forEach((childSnapshot) => {
+                        const sunbedId = childSnapshot.key;
+                        const data = childSnapshot.val();
+                        updates[sunbedId] = {
+                            ...data,
+                            color: 'green'
+                        };
+                    });
+
+                    return db.ref('sunbeds').update(updates);
+                }).then(() => {
+                    // Remover indicador de carga
+                    document.body.removeChild(loadingIndicator);
+                    
+                    // Forzar actualización de la interfaz
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }).catch((error) => {
+                    // Remover indicador de carga en caso de error
+                    if (document.body.contains(loadingIndicator)) {
+                        document.body.removeChild(loadingIndicator);
+                    }
+                    console.error("Error al resetear colores:", error);
+                    alert("Hubo un error al resetear los colores. Por favor, inténtalo de nuevo.");
+                });
+            } catch (error) {
+                console.error("Error de inicialización:", error);
+                alert("Error al inicializar Firebase. Por favor, recarga la página e inténtalo de nuevo.");
+            }
         },
 
 
@@ -949,72 +944,67 @@ $(document).ready(function() {
 });
 
 function reiniciarCalculadora() {
-    showCustomDialog(
-        "¿Estás seguro de que deseas reiniciar la calculadora? Se borrarán todos los totales y el historial de pagos.",
-        () => {
-            try {
-                // Asegurarse de que db está inicializado
-                if (!db) {
-                    throw new Error('Firebase no está inicializado');
-                }
-
-                // Mostrar indicador de carga
-                const loadingIndicator = document.createElement('div');
-                loadingIndicator.style.position = 'fixed';
-                loadingIndicator.style.top = '50%';
-                loadingIndicator.style.left = '50%';
-                loadingIndicator.style.transform = 'translate(-50%, -50%)';
-                loadingIndicator.style.padding = '20px';
-                loadingIndicator.style.background = 'rgba(0,0,0,0.8)';
-                loadingIndicator.style.color = 'white';
-                loadingIndicator.style.borderRadius = '10px';
-                loadingIndicator.style.zIndex = '9999';
-                loadingIndicator.textContent = 'Reiniciando calculadora...';
-                document.body.appendChild(loadingIndicator);
-
-                // Primero, actualizar la interfaz local
-                document.getElementById('hamaca').value = '';
-                document.getElementById('totalSelect').selectedIndex = 1;
-                document.getElementById('totalManual').value = '';
-                document.getElementById('recibidoManual').value = '';
-                document.getElementById('pago').selectedIndex = 0;
-                document.getElementById('sombrillaExtra').selectedIndex = 0;
-                document.getElementById('resultado').textContent = '';
-                document.getElementById('historial').innerHTML = '';
-                document.getElementById('totalEfectivo').textContent = '0.00';
-                document.getElementById('totalTarjeta').textContent = '0.00';
-                document.getElementById('totalGeneral').textContent = '0.00';
-
-                // Luego, actualizar Firebase
-                db.ref().update({
-                    'historial': null,
-                    'totales': {
-                        efectivo: 0,
-                        tarjeta: 0,
-                        general: 0
-                    }
-                }).then(() => {
-                    // Remover indicador de carga
-                    document.body.removeChild(loadingIndicator);
-                    
-                    // Forzar actualización de la interfaz
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
-                }).catch(error => {
-                    // Remover indicador de carga en caso de error
-                    if (document.body.contains(loadingIndicator)) {
-                        document.body.removeChild(loadingIndicator);
-                    }
-                    console.error("Error al reiniciar la calculadora:", error);
-                    alert("Hubo un error al reiniciar la calculadora. Por favor, inténtalo de nuevo.");
-                });
-            } catch (error) {
-                console.error("Error de inicialización:", error);
-                alert("Error al inicializar Firebase. Por favor, recarga la página e inténtalo de nuevo.");
-            }
+    try {
+        // Asegurarse de que db está inicializado
+        if (!db) {
+            throw new Error('Firebase no está inicializado');
         }
-    );
+
+        // Mostrar indicador de carga
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.style.position = 'fixed';
+        loadingIndicator.style.top = '50%';
+        loadingIndicator.style.left = '50%';
+        loadingIndicator.style.transform = 'translate(-50%, -50%)';
+        loadingIndicator.style.padding = '20px';
+        loadingIndicator.style.background = 'rgba(0,0,0,0.8)';
+        loadingIndicator.style.color = 'white';
+        loadingIndicator.style.borderRadius = '10px';
+        loadingIndicator.style.zIndex = '9999';
+        loadingIndicator.textContent = 'Reiniciando calculadora...';
+        document.body.appendChild(loadingIndicator);
+
+        // Primero, actualizar la interfaz local
+        document.getElementById('hamaca').value = '';
+        document.getElementById('totalSelect').selectedIndex = 1;
+        document.getElementById('totalManual').value = '';
+        document.getElementById('recibidoManual').value = '';
+        document.getElementById('pago').selectedIndex = 0;
+        document.getElementById('sombrillaExtra').selectedIndex = 0;
+        document.getElementById('resultado').textContent = '';
+        document.getElementById('historial').innerHTML = '';
+        document.getElementById('totalEfectivo').textContent = '0.00';
+        document.getElementById('totalTarjeta').textContent = '0.00';
+        document.getElementById('totalGeneral').textContent = '0.00';
+
+        // Luego, actualizar Firebase
+        db.ref().update({
+            'historial': null,
+            'totales': {
+                efectivo: 0,
+                tarjeta: 0,
+                general: 0
+            }
+        }).then(() => {
+            // Remover indicador de carga
+            document.body.removeChild(loadingIndicator);
+            
+            // Forzar actualización de la interfaz
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        }).catch(error => {
+            // Remover indicador de carga en caso de error
+            if (document.body.contains(loadingIndicator)) {
+                document.body.removeChild(loadingIndicator);
+            }
+            console.error("Error al reiniciar la calculadora:", error);
+            alert("Hubo un error al reiniciar la calculadora. Por favor, inténtalo de nuevo.");
+        });
+    } catch (error) {
+        console.error("Error de inicialización:", error);
+        alert("Error al inicializar Firebase. Por favor, recarga la página e inténtalo de nuevo.");
+    }
 }
 
 function descargarLog() {
