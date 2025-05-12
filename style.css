@@ -989,6 +989,13 @@ input, textarea {
     animation: fadeInMenu 0.35s cubic-bezier(.4,1.4,.6,1) both;
     padding: 36px 0 28px 0;
     gap: 28px;
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 320px;
+    margin: 0 auto;
   }
   .menu-desplegable button {
     background: linear-gradient(90deg, #ffe0b2 60%, #ffd54f 100%);
@@ -999,6 +1006,8 @@ input, textarea {
     font-weight: 600;
     letter-spacing: 0.5px;
     transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+    width: 90%;
+    margin: 0 auto;
   }
   .menu-desplegable button:active {
     background: linear-gradient(90deg, #ffd54f 60%, #ffe0b2 100%);
