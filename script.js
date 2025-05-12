@@ -858,213 +858,122 @@ function toggleHistorial() {
 }
 
 function descargarHistorial() {
-  let datosHistorial = JSON.parse(localStorage.getItem("historial")) || [];
-
-  const resumenDiario = {};
-  const resumenMensual = {};
-
-  datosHistorial.forEach(entry => {
-    // Manejo correcto para fechas en formato DD/MM/YYYY
-    let [dia, mes, anioHora] = entry.fecha.split('/');
-    let [anio] = anioHora.split(' ');
-    let fecha = new Date(`${anio}-${mes}-${dia}`);
-
-    const diaClave = `${String(fecha.getDate()).padStart(2, '0')}/${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
-    const mesClave = `${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
-    const total = parseFloat(entry.total || 0);
-    const metodo = entry.metodo;
-
-    if (!resumenDiario[diaClave]) {
-      resumenDiario[diaClave] = { efectivo: 0, tarjeta: 0 };
-    }
-    if (!resumenMensual[mesClave]) {
-      resumenMensual[mesClave] = { efectivo: 0, tarjeta: 0 };
+  // Obtener datos de Firebase
+  db.ref('historial').once('value').then((snapshot) => {
+    if (!snapshot.exists()) {
+      alert('No hay datos en el historial para descargar');
+      return;
     }
 
-    if (metodo === 'efectivo') {
-      resumenDiario[diaClave].efectivo += total;
-      resumenMensual[mesClave].efectivo += total;
-    } else {
-      resumenDiario[diaClave].tarjeta += total;
-      resumenMensual[mesClave].tarjeta += total;
-    }
-  });
+    const historialData = snapshot.val();
+    const resumenDiario = {};
+    const resumenMensual = {};
 
-  let csv = "Resumen Diario\nDía,Efectivo,Tarjeta,Total\n";
-  for (let dia in resumenDiario) {
-    const d = resumenDiario[dia];
-    csv += `${dia},${d.efectivo.toFixed(2)},${d.tarjeta.toFixed(2)},${(d.efectivo + d.tarjeta).toFixed(2)}\n`;
-  }
+    // Procesar los datos
+    Object.values(historialData).forEach(entry => {
+      // Convertir la fecha del formato DD/MM/YYYY HH:MM a objeto Date
+      const [fechaPart, horaPart] = entry.fecha.split(' ');
+      const [dia, mes, anio] = fechaPart.split('/');
+      const fecha = new Date(anio, mes - 1, dia);
 
-  csv += "\nResumen Mensual\nMes,Efectivo,Tarjeta,Total\n";
-  for (let mes in resumenMensual) {
-    const m = resumenMensual[mes];
-    csv += `${mes},${m.efectivo.toFixed(2)},${m.tarjeta.toFixed(2)},${(m.efectivo + m.tarjeta).toFixed(2)}\n`;
-  }
+      const diaClave = `${String(fecha.getDate()).padStart(2, '0')}/${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
+      const mesClave = `${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
+      const total = parseFloat(entry.total || 0);
+      const metodo = entry.metodo;
 
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", "resumen_contabilidad_2025.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-function cargarHistorial() {
-  const historial = document.getElementById('historial');
-  const datosHistorial = JSON.parse(localStorage.getItem("historial")) || [];
-  
-  // Limpiar el historial actual
-  historial.innerHTML = '';
-  
-  // Recargar el historial desde localStorage
-  datosHistorial.forEach(entry => {
-    const li = document.createElement('li');
-    if (entry.devolucion) {
-      li.textContent = `Devolución Hamaca ${entry.hamaca} - Total: €${entry.total} - Devolución: €${entry.devolucion} - Método: ${entry.metodo} - ${entry.fecha}`;
-    } else {
-      li.textContent = `Hamaca ${entry.hamaca} - Total: €${entry.total} - Recibido: €${entry.recibido} - Cambio: €${entry.cambio} - Método: ${entry.metodo} - ${entry.fecha}`;
-    }
-    historial.insertBefore(li, historial.firstChild);
-  });
-
-  // Recargar los totales
-  totalEfectivo = 0;
-  totalTarjeta = 0;
-  
-  datosHistorial.forEach(entry => {
-    if (!entry.devolucion) {
-      const total = parseFloat(entry.total);
-      if (entry.metodo === 'efectivo') {
-        totalEfectivo += total;
-      } else {
-        totalTarjeta += total;
+      if (!resumenDiario[diaClave]) {
+        resumenDiario[diaClave] = { efectivo: 0, tarjeta: 0 };
       }
-    } else {
-      const total = parseFloat(entry.total);
-      if (entry.metodo === 'efectivo') {
-        totalEfectivo -= total;
-      } else {
-        totalTarjeta -= total;
+      if (!resumenMensual[mesClave]) {
+        resumenMensual[mesClave] = { efectivo: 0, tarjeta: 0 };
       }
-    }
-  });
 
-  document.getElementById('totalEfectivo').textContent = totalEfectivo.toFixed(2);
-  document.getElementById('totalTarjeta').textContent = totalTarjeta.toFixed(2);
-  document.getElementById('totalGeneral').textContent = (totalEfectivo + totalTarjeta).toFixed(2);
-}
-
-// Cargar el historial cuando se inicia la página
-$(document).ready(function() {
-  cargarEstadosHamacas();
-  cargarHistorial();
-  // Seleccionar por defecto 16€ 2 hamacas en el select de pago
-  const totalSelect = document.getElementById('totalSelect');
-  if (totalSelect) {
-    totalSelect.value = '16';
-  }
-  // Mostrar la fecha de hoy al lado de 'Cobro'
-  const fechaCobro = document.getElementById('fecha-cobro');
-  if (fechaCobro) {
-    const hoy = new Date();
-    const dia = String(hoy.getDate()).padStart(2, '0');
-    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-    const anio = hoy.getFullYear();
-    fechaCobro.textContent = `${dia}/${mes}/${anio}`;
-  }
-});
-
-function reiniciarCalculadora() {
-    try {
-        // Asegurarse de que db está inicializado
-        if (!db) {
-            throw new Error('Firebase no está inicializado');
+      if (entry.devolucion) {
+        // Restar en caso de devolución
+        if (metodo === 'efectivo') {
+          resumenDiario[diaClave].efectivo -= total;
+          resumenMensual[mesClave].efectivo -= total;
+        } else {
+          resumenDiario[diaClave].tarjeta -= total;
+          resumenMensual[mesClave].tarjeta -= total;
         }
+      } else {
+        // Sumar en caso de pago normal
+        if (metodo === 'efectivo') {
+          resumenDiario[diaClave].efectivo += total;
+          resumenMensual[mesClave].efectivo += total;
+        } else {
+          resumenDiario[diaClave].tarjeta += total;
+          resumenMensual[mesClave].tarjeta += total;
+        }
+      }
+    });
 
-        // Mostrar indicador de carga
-        const loadingIndicator = document.createElement('div');
-        loadingIndicator.style.position = 'fixed';
-        loadingIndicator.style.top = '50%';
-        loadingIndicator.style.left = '50%';
-        loadingIndicator.style.transform = 'translate(-50%, -50%)';
-        loadingIndicator.style.padding = '20px';
-        loadingIndicator.style.background = 'rgba(0,0,0,0.8)';
-        loadingIndicator.style.color = 'white';
-        loadingIndicator.style.borderRadius = '10px';
-        loadingIndicator.style.zIndex = '9999';
-        loadingIndicator.textContent = 'Reiniciando calculadora...';
-        document.body.appendChild(loadingIndicator);
-
-        // Primero, actualizar la interfaz local
-        document.getElementById('hamaca').value = '';
-        document.getElementById('totalSelect').selectedIndex = 1;
-        document.getElementById('totalManual').value = '';
-        document.getElementById('recibidoManual').value = '';
-        document.getElementById('pago').selectedIndex = 0;
-        document.getElementById('sombrillaExtra').selectedIndex = 0;
-        document.getElementById('resultado').textContent = '';
-        document.getElementById('historial').innerHTML = '';
-        document.getElementById('totalEfectivo').textContent = '0.00';
-        document.getElementById('totalTarjeta').textContent = '0.00';
-        document.getElementById('totalGeneral').textContent = '0.00';
-
-        // Luego, actualizar Firebase
-        db.ref().update({
-            'historial': null,
-            'totales': {
-                efectivo: 0,
-                tarjeta: 0,
-                general: 0
-            }
-        }).then(() => {
-            // Remover indicador de carga
-            document.body.removeChild(loadingIndicator);
-            
-            // Forzar actualización de la interfaz
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
-        }).catch(error => {
-            // Remover indicador de carga en caso de error
-            if (document.body.contains(loadingIndicator)) {
-                document.body.removeChild(loadingIndicator);
-            }
-            console.error("Error al reiniciar la calculadora:", error);
-            alert("Hubo un error al reiniciar la calculadora. Por favor, inténtalo de nuevo.");
-        });
-    } catch (error) {
-        console.error("Error de inicialización:", error);
-        alert("Error al inicializar Firebase. Por favor, recarga la página e inténtalo de nuevo.");
+    // Generar CSV
+    let csv = "Resumen Diario\nDía,Efectivo,Tarjeta,Total\n";
+    for (let dia in resumenDiario) {
+      const d = resumenDiario[dia];
+      csv += `${dia},${d.efectivo.toFixed(2)},${d.tarjeta.toFixed(2)},${(d.efectivo + d.tarjeta).toFixed(2)}\n`;
     }
+
+    csv += "\nResumen Mensual\nMes,Efectivo,Tarjeta,Total\n";
+    for (let mes in resumenMensual) {
+      const m = resumenMensual[mes];
+      csv += `${mes},${m.efectivo.toFixed(2)},${m.tarjeta.toFixed(2)},${(m.efectivo + m.tarjeta).toFixed(2)}\n`;
+    }
+
+    // Crear y descargar el archivo
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `resumen_contabilidad_${new Date().getFullYear()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }).catch(error => {
+    console.error('Error al descargar el historial:', error);
+    alert('Error al descargar el historial. Por favor, inténtalo de nuevo.');
+  });
 }
 
 function descargarLog() {
-  let operaciones = JSON.parse(localStorage.getItem("operaciones")) || [];
+  // Obtener datos de Firebase
+  db.ref('historial').once('value').then((snapshot) => {
+    if (!snapshot.exists()) {
+      alert('No hay datos en el log para descargar');
+      return;
+    }
 
-  let csv = "Fecha,Hora,Hamaca,Pagado,Devuelto\n";
+    const historialData = snapshot.val();
+    let csv = "Fecha,Hora,Hamaca,Total,Pago,Cambio,Método\n";
 
-  operaciones.forEach(entry => {
-    // Separar la fecha original "DD/MM/YYYY HH:MM"
-    const partes = entry.fecha.split(' ');
-    const fechaTexto = partes[0]; // "DD/MM/YYYY"
-    const horaTexto = partes[1] || ''; // "HH:MM"
+    // Procesar los datos
+    Object.values(historialData).forEach(entry => {
+      const [fechaPart, horaPart] = entry.fecha.split(' ');
+      const total = entry.total || '0';
+      const pago = entry.recibido || '0';
+      const cambio = entry.cambio || '0';
+      const metodo = entry.metodo || 'N/A';
+      const hamaca = entry.hamaca || 'N/A';
 
-    csv += `${fechaTexto},${horaTexto},${entry.hamaca},${entry.pagado},${entry.devuelto}\n`;
+      csv += `${fechaPart},${horaPart},${hamaca},${total},${pago},${cambio},${metodo}\n`;
+    });
+
+    // Crear y descargar el archivo
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `log_operaciones_${new Date().getFullYear()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }).catch(error => {
+    console.error('Error al descargar el log:', error);
+    alert('Error al descargar el log. Por favor, inténtalo de nuevo.');
   });
-
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", "log_operaciones_individuales.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
 }
-
 
 //FUNCIONAMIENTO DE SERVICE WORKER NO TOCAR
 if ('serviceWorker' in navigator) {
@@ -1513,4 +1422,66 @@ function showCustomDialog(message, onConfirm, onCancel) {
         document.body.removeChild(dialog);
         if (onCancel) onCancel();
     };
+}
+
+function mostrarHistorialResumen() {
+  const historialContainer = document.getElementById('historialContainer');
+  const historial = document.getElementById('historial');
+  
+  if (!historialContainer || !historial) {
+    console.error('No se encontraron los elementos del historial');
+    return;
+  }
+
+  // Mostrar el contenedor
+  historialContainer.style.display = 'block';
+  
+  // Limpiar el historial actual
+  historial.innerHTML = '';
+  
+  // Obtener el historial de Firebase
+  const historialRef = ref(db, 'historial');
+  get(historialRef).then((snapshot) => {
+    if (snapshot.exists()) {
+      const historialData = snapshot.val();
+      const historialArray = Object.entries(historialData)
+        .map(([id, data]) => ({
+          id,
+          ...data,
+          timestamp: data.timestamp || 0
+        }))
+        .sort((a, b) => b.timestamp - a.timestamp);
+
+      if (historialArray.length === 0) {
+        historial.innerHTML = '<li>No hay registros en el historial</li>';
+        return;
+      }
+
+      historialArray.forEach(registro => {
+        const li = document.createElement('li');
+        const fecha = new Date(registro.timestamp);
+        const fechaFormateada = fecha.toLocaleString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        li.innerHTML = `
+          <strong>${fechaFormateada}</strong><br>
+          Cliente: ${registro.cliente}<br>
+          Importe: ${registro.importe}€<br>
+          Pago: ${registro.pago}€<br>
+          Cambio: ${registro.cambio}€
+        `;
+        historial.appendChild(li);
+      });
+    } else {
+      historial.innerHTML = '<li>No hay registros en el historial</li>';
+    }
+  }).catch(error => {
+    console.error('Error al obtener el historial:', error);
+    historial.innerHTML = '<li>Error al cargar el historial</li>';
+  });
 }
