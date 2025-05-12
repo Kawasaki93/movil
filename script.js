@@ -594,6 +594,7 @@ var SunbedController = function() {
                 document.querySelectorAll('.circle').forEach(circle => {
                     circle.classList.remove('step1', 'step2', 'step3');
                     circle.classList.add('step1');
+                    circle.dataset.actualStep = '1';
                 });
 
                 // Luego, actualizar Firebase
@@ -617,7 +618,8 @@ var SunbedController = function() {
                         snapshot.forEach((childSnapshot) => {
                             const circleId = childSnapshot.key;
                             updates[circleId] = {
-                                step: '1'
+                                step: '1',
+                                lastUpdated: new Date().toISOString()
                             };
                         });
                         return db.ref('circles').update(updates);
