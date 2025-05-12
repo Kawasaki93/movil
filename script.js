@@ -305,7 +305,8 @@ function clearClick() {
                     const hamacaId = hamaca.id;
                     if (hamacaId) {
                         updates[hamacaId] = {
-                            color: '1' // Reset a disponible
+                            color: '1', // Reset a disponible
+                            customer_name: '' // Borrar nombre del cliente
                         };
                     }
                 });
@@ -562,45 +563,28 @@ var SunbedController = function() {
         },
 
         reset_local_storage_except_customers: function () {           
-            if (confirm("¿Estás seguro de que deseas borrar todos los colores? Esta acción no se puede deshacer.")) {
-                // Resetear colores en Firebase manteniendo nombres
+            if (confirm("¿Estás seguro de que deseas poner todas las hamacas en verde (disponible)? Esta acción no afecta los nombres de los clientes.")) {
                 db.ref('sunbeds').once('value')
                     .then((snapshot) => {
                         const updates = {};
                         snapshot.forEach((childSnapshot) => {
                             const sunbedId = childSnapshot.key;
                             const data = childSnapshot.val();
-                            // Mantener solo el nombre del cliente
-                            if (data.customer_name) {
-                                updates[sunbedId] = {
-                                    customer_name: data.customer_name,
-                                    color: '1' // Reset a color disponible
-                                };
-                            } else {
-                                updates[sunbedId] = {
-                                    color: '1' // Reset a color disponible
-                                };
-                            }
+                            // Mantener el nombre del cliente, solo cambiar el color a '1'
+                            updates[sunbedId] = {
+                                ...data,
+                                color: '1'
+                            };
                         });
                         return db.ref('sunbeds').update(updates);
                     })
                     .then(() => {
-                        // Resetear círculos
-                        return db.ref('circles').once('value');
-                    })
-                    .then((snapshot) => {
-                        const updates = {};
-                        snapshot.forEach((childSnapshot) => {
-                            const circleId = childSnapshot.key;
-                            updates[circleId] = {
-                                step: '1' // Reset a primer estado
-                            };
+                        // Actualiza la interfaz local inmediatamente
+                        document.querySelectorAll('.sunbed').forEach(hamaca => {
+                            hamaca.classList.remove('step1', 'step2', 'step3', 'step4', 'step5', 'step6');
+                            hamaca.classList.add('step1');
                         });
-                        return db.ref('circles').update(updates);
-                    })
-                    .then(() => {
-                        console.log("Colores reseteados correctamente");
-                        window.location.reload();
+                        console.log("Colores de todas las hamacas reseteados a verde (step1)");
                     })
                     .catch((error) => {
                         console.error("Error al resetear colores:", error);
@@ -931,7 +915,9 @@ function reiniciarCalculadora() {
     if (confirm("¿Estás seguro de que deseas reiniciar la calculadora? Se borrarán todos los totales y el historial de pagos.")) {
         // Borrar historial y totales en Firebase
         const promises = [
+            // Borrar todo el historial de pagos
             db.ref('historial').remove(),
+            // Resetear los totales a 0
             db.ref('totales').set({
                 efectivo: 0,
                 tarjeta: 0,
@@ -943,7 +929,7 @@ function reiniciarCalculadora() {
             .then(() => {
                 // Reiniciar campos del formulario
                 document.getElementById('hamaca').value = '';
-                document.getElementById('totalSelect').selectedIndex = 0;
+                document.getElementById('totalSelect').selectedIndex = 1; // 16€ 2 hamacas
                 document.getElementById('totalManual').value = '';
                 document.getElementById('recibidoManual').value = '';
                 document.getElementById('pago').selectedIndex = 0;
@@ -961,6 +947,25 @@ function reiniciarCalculadora() {
                 // Reiniciar variables globales
                 totalEfectivo = 0;
                 totalTarjeta = 0;
+
+                // Limpiar localStorage por si acaso
+                localStorage.removeItem('historial');
+                localStorage.removeItem('total_sold');
+                localStorage.removeItem('shopping_cart');
+
+                // Actualizar la interfaz para reflejar los cambios en tiempo real
+                db.ref('historial').once('value', (snapshot) => {
+                    if (!snapshot.exists()) {
+                        document.getElementById('historial').innerHTML = '';
+                    }
+                });
+
+                db.ref('totales').once('value', (snapshot) => {
+                    const totales = snapshot.val() || { efectivo: 0, tarjeta: 0, general: 0 };
+                    document.getElementById('totalEfectivo').textContent = totales.efectivo.toFixed(2);
+                    document.getElementById('totalTarjeta').textContent = totales.tarjeta.toFixed(2);
+                    document.getElementById('totalGeneral').textContent = totales.general.toFixed(2);
+                });
 
                 console.log("Calculadora reiniciada correctamente");
             })
