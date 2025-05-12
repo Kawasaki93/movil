@@ -284,10 +284,92 @@ $("#clon_83,#clon_84,#clon_85,#clon_89,#clon_90,#clon_91,#clon_92,#clon_93,#clon
 
 
 //clear localstorage
-function clearClick(number) {
-    if (confirm("¿Estás seguro de que deseas borrar TODOS los datos almacenados? Esta acción eliminará todos los campos y no se puede deshacer.")) {
-        localStorage.clear();
-        window.location.reload();
+function clearClick() {
+    if (confirm("¿Estás seguro de que deseas borrar TODOS los datos? Esta acción eliminará todos los colores, nombres de clientes, historial de pagos y registros totales.")) {
+        // Borrar todos los datos en Firebase
+        const promises = [
+            // Borrar historial de pagos
+            db.ref('historial').remove(),
+            
+            // Borrar totales
+            db.ref('totales').set({
+                efectivo: 0,
+                tarjeta: 0,
+                general: 0
+            }),
+            
+            // Resetear todas las hamacas a step1 y borrar nombres
+            db.ref('sunbeds').once('value').then((snapshot) => {
+                const updates = {};
+                document.querySelectorAll('.sunbed').forEach(hamaca => {
+                    const hamacaId = hamaca.id;
+                    if (hamacaId) {
+                        updates[hamacaId] = {
+                            color: '1' // Reset a disponible
+                        };
+                    }
+                });
+                return db.ref('sunbeds').set(updates);
+            }),
+            
+            // Resetear círculos
+            db.ref('circles').once('value').then((snapshot) => {
+                const updates = {};
+                document.querySelectorAll('.circle').forEach(circle => {
+                    const circleId = circle.id;
+                    if (circleId) {
+                        updates[circleId] = {
+                            step: '1' // Reset a primer estado
+                        };
+                    }
+                });
+                return db.ref('circles').set(updates);
+            })
+        ];
+
+        Promise.all(promises)
+            .then(() => {
+                console.log("Todos los datos han sido borrados correctamente");
+                
+                // Resetear la interfaz
+                document.querySelectorAll('.sunbed').forEach(hamaca => {
+                    // Remover todas las clases de color
+                    hamaca.classList.remove('step1', 'step2', 'step3', 'step4', 'step5', 'step6');
+                    // Añadir clase disponible
+                    hamaca.classList.add('step1');
+                    // Limpiar nombre del cliente
+                    const input = hamaca.querySelector('.customer_name');
+                    if (input) input.value = '';
+                });
+
+                // Resetear círculos en la interfaz
+                document.querySelectorAll('.circle').forEach(circle => {
+                    circle.classList.remove('step1', 'step2', 'step3');
+                    circle.classList.add('step1');
+                });
+
+                // Limpiar historial
+                document.getElementById('historial').innerHTML = '';
+                
+                // Resetear totales mostrados
+                document.getElementById('totalEfectivo').textContent = '0.00';
+                document.getElementById('totalTarjeta').textContent = '0.00';
+                document.getElementById('totalGeneral').textContent = '0.00';
+
+                // Reiniciar variables globales
+                totalEfectivo = 0;
+                totalTarjeta = 0;
+
+                // Limpiar localStorage por si acaso
+                localStorage.clear();
+
+                // Recargar la página para asegurar que todo se actualiza
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error("Error al borrar los datos:", error);
+                alert("Hubo un error al borrar los datos. Por favor, inténtalo de nuevo.");
+            });
     }
 }
 
@@ -480,18 +562,50 @@ var SunbedController = function() {
         },
 
         reset_local_storage_except_customers: function () {           
-            if (confirm("¿Estás seguro de que deseas borrar todos los colores y el registro total de la calculadora? Esta acción no se puede deshacer.")) {
-                Object.keys(localStorage).forEach(function (local_key) {
-                    // Solo eliminar si NO es customer_name y NO es visibilidad de fila o zona libre
-                    if (
-                        !local_key.includes('customer_name') &&
-                        !local_key.includes('Visibility')
-                    ) {
-                        localStorage.removeItem(local_key);
-                    }
-                });
-
-                window.location.reload();
+            if (confirm("¿Estás seguro de que deseas borrar todos los colores? Esta acción no se puede deshacer.")) {
+                // Resetear colores en Firebase manteniendo nombres
+                db.ref('sunbeds').once('value')
+                    .then((snapshot) => {
+                        const updates = {};
+                        snapshot.forEach((childSnapshot) => {
+                            const sunbedId = childSnapshot.key;
+                            const data = childSnapshot.val();
+                            // Mantener solo el nombre del cliente
+                            if (data.customer_name) {
+                                updates[sunbedId] = {
+                                    customer_name: data.customer_name,
+                                    color: '1' // Reset a color disponible
+                                };
+                            } else {
+                                updates[sunbedId] = {
+                                    color: '1' // Reset a color disponible
+                                };
+                            }
+                        });
+                        return db.ref('sunbeds').update(updates);
+                    })
+                    .then(() => {
+                        // Resetear círculos
+                        return db.ref('circles').once('value');
+                    })
+                    .then((snapshot) => {
+                        const updates = {};
+                        snapshot.forEach((childSnapshot) => {
+                            const circleId = childSnapshot.key;
+                            updates[circleId] = {
+                                step: '1' // Reset a primer estado
+                            };
+                        });
+                        return db.ref('circles').update(updates);
+                    })
+                    .then(() => {
+                        console.log("Colores reseteados correctamente");
+                        window.location.reload();
+                    })
+                    .catch((error) => {
+                        console.error("Error al resetear colores:", error);
+                        alert("Hubo un error al resetear los colores. Por favor, inténtalo de nuevo.");
+                    });
             }
         },
 
@@ -597,36 +711,17 @@ function calcularCambio() {
   li.textContent = `Hamaca ${hamaca} - Total: €${total.toFixed(2)}${sombrillaInfo} - Recibido: €${recibido.toFixed(2)} - Cambio: €${cambio.toFixed(2)} - Método: ${metodo} - ${fecha}`;
   historial.insertBefore(li, historial.firstChild);
 
-  if (metodo === 'efectivo') {
-    totalEfectivo += total;
-  } else {
-    totalTarjeta += total;
-  }
-
-  document.getElementById('totalEfectivo').textContent = totalEfectivo.toFixed(2);
-  document.getElementById('totalTarjeta').textContent = totalTarjeta.toFixed(2);
-  document.getElementById('totalGeneral').textContent = (totalEfectivo + totalTarjeta).toFixed(2);
-
-  let datosHistorial = JSON.parse(localStorage.getItem("historial")) || [];
-  datosHistorial.push({
-    fecha,
-    hamaca: hamaca || "-",
-    total: total.toFixed(2),
-    recibido: recibido.toFixed(2),
-    cambio: cambio.toFixed(2),
-    metodo,
-    sombrillaExtra: sombrillaExtra === 'si'
+  // Actualizar totales en Firebase
+  db.ref('totales').transaction((currentTotales) => {
+    const totales = currentTotales || { efectivo: 0, tarjeta: 0, general: 0 };
+    if (metodo === 'efectivo') {
+      totales.efectivo = (parseFloat(totales.efectivo) || 0) + total;
+    } else {
+      totales.tarjeta = (parseFloat(totales.tarjeta) || 0) + total;
+    }
+    totales.general = totales.efectivo + totales.tarjeta;
+    return totales;
   });
-  localStorage.setItem("historial", JSON.stringify(datosHistorial));
-
-  let operaciones = JSON.parse(localStorage.getItem("operaciones")) || [];
-  operaciones.push({
-    fecha,
-    hamaca: hamaca || "-",
-    pagado: total.toFixed(2),
-    devuelto: ""
-  });
-  localStorage.setItem("operaciones", JSON.stringify(operaciones));
 
   // Guardar en Firebase
   guardarHistorialPago({
@@ -652,11 +747,8 @@ function procesarDevolucion() {
   const hamaca = document.getElementById('hamaca').value;
   const totalSelect = parseFloat(document.getElementById('totalSelect').value);
   const totalManual = parseFloat(document.getElementById('totalManual').value);
-  const recibidoSelect = parseFloat(document.getElementById('recibidoSelect').value);
-  const recibidoManual = parseFloat(document.getElementById('recibidoManual').value);
   const metodo = document.getElementById('pago').value;
 
-  // Usamos el total como el valor de lo que se debe devolver
   const total = totalManual || totalSelect;
 
   if (isNaN(total)) {
@@ -664,16 +756,12 @@ function procesarDevolucion() {
     return;
   }
 
-  // La devolución será simplemente el total (es decir, se debe devolver todo el monto)
   const devolucion = total;
-
-  // Mostramos el monto de la devolución
   document.getElementById('resultado').textContent = `Devolución: €${devolucion.toFixed(2)}`;
 
   const historial = document.getElementById('historial');
   const li = document.createElement('li');
 
-  // Fecha y hora del registro
   const fechaObj = new Date();
   const dia = String(fechaObj.getDate()).padStart(2, '0');
   const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
@@ -682,42 +770,20 @@ function procesarDevolucion() {
   const minutos = String(fechaObj.getMinutes()).padStart(2, '0');
   const fecha = `${dia}/${mes}/${anio} ${horas}:${minutos}`;
 
-  // Creamos el elemento de historial
   li.textContent = `Devolución Hamaca ${hamaca} - Total: €${total.toFixed(2)} - Devolución: €${devolucion.toFixed(2)} - Método: ${metodo} - ${fecha}`;
   historial.insertBefore(li, historial.firstChild);
 
-  // Actualizamos los totales de efectivo o tarjeta según el método de pago
-  if (metodo === 'efectivo') {
-    totalEfectivo -= total;  // Restamos el total para reflejar la devolución
-  } else {
-    totalTarjeta -= total;  // Restamos el total para reflejar la devolución
-  }
-
-  // Actualizamos el total en pantalla
-  document.getElementById('totalEfectivo').textContent = totalEfectivo.toFixed(2);
-  document.getElementById('totalTarjeta').textContent = totalTarjeta.toFixed(2);
-  document.getElementById('totalGeneral').textContent = (totalEfectivo + totalTarjeta).toFixed(2);
-
-  // Guardamos el historial en localStorage
-  let datosHistorial = JSON.parse(localStorage.getItem("historial")) || [];
-  datosHistorial.push({
-    fecha,
-    hamaca: hamaca || "-",
-    total: total.toFixed(2),
-    devolucion: devolucion.toFixed(2),
-    metodo
+  // Actualizar totales en Firebase
+  db.ref('totales').transaction((currentTotales) => {
+    const totales = currentTotales || { efectivo: 0, tarjeta: 0, general: 0 };
+    if (metodo === 'efectivo') {
+      totales.efectivo = (parseFloat(totales.efectivo) || 0) - total;
+    } else {
+      totales.tarjeta = (parseFloat(totales.tarjeta) || 0) - total;
+    }
+    totales.general = totales.efectivo + totales.tarjeta;
+    return totales;
   });
-  localStorage.setItem("historial", JSON.stringify(datosHistorial));
-
-  // Guardamos la operación de la devolución en el historial de operaciones
-  let operaciones = JSON.parse(localStorage.getItem("operaciones")) || [];
-  operaciones.push({
-    fecha,
-    hamaca: hamaca || "-",
-    pagado: "",
-    devuelto: devolucion.toFixed(2)
-  });
-  localStorage.setItem("operaciones", JSON.stringify(operaciones));
 
   // Guardar en Firebase
   guardarHistorialPago({
@@ -727,6 +793,13 @@ function procesarDevolucion() {
     devolucion: devolucion.toFixed(2),
     metodo
   });
+
+  // Reiniciar campos
+  document.getElementById('hamaca').value = '';
+  document.getElementById('totalSelect').selectedIndex = 0;
+  document.getElementById('totalManual').value = '';
+  document.getElementById('recibidoManual').value = '';
+  document.getElementById('pago').selectedIndex = 0;
 }
 
 function toggleHistorial() {
@@ -855,15 +928,47 @@ $(document).ready(function() {
 });
 
 function reiniciarCalculadora() {
-  document.getElementById('hamaca').value = '';
-  document.getElementById('totalSelect').selectedIndex = 0;
-  document.getElementById('totalManual').value = '';
-  document.getElementById('recibidoManual').value = '';
-  document.getElementById('pago').selectedIndex = 0;
-  document.getElementById('resultado').textContent = '';
+    if (confirm("¿Estás seguro de que deseas reiniciar la calculadora? Se borrarán todos los totales y el historial de pagos.")) {
+        // Borrar historial y totales en Firebase
+        const promises = [
+            db.ref('historial').remove(),
+            db.ref('totales').set({
+                efectivo: 0,
+                tarjeta: 0,
+                general: 0
+            })
+        ];
 
-  // No reiniciamos los totales ni el historial aquí
-  // ya que queremos mantener los datos en localStorage
+        Promise.all(promises)
+            .then(() => {
+                // Reiniciar campos del formulario
+                document.getElementById('hamaca').value = '';
+                document.getElementById('totalSelect').selectedIndex = 0;
+                document.getElementById('totalManual').value = '';
+                document.getElementById('recibidoManual').value = '';
+                document.getElementById('pago').selectedIndex = 0;
+                document.getElementById('sombrillaExtra').selectedIndex = 0;
+                document.getElementById('resultado').textContent = '';
+
+                // Limpiar historial en la interfaz
+                document.getElementById('historial').innerHTML = '';
+                
+                // Reiniciar totales mostrados
+                document.getElementById('totalEfectivo').textContent = '0.00';
+                document.getElementById('totalTarjeta').textContent = '0.00';
+                document.getElementById('totalGeneral').textContent = '0.00';
+
+                // Reiniciar variables globales
+                totalEfectivo = 0;
+                totalTarjeta = 0;
+
+                console.log("Calculadora reiniciada correctamente");
+            })
+            .catch(error => {
+                console.error("Error al reiniciar la calculadora:", error);
+                alert("Hubo un error al reiniciar la calculadora. Por favor, inténtalo de nuevo.");
+            });
+    }
 }
 
 function descargarLog() {
