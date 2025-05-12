@@ -585,69 +585,41 @@ var SunbedController = function() {
                     loadingIndicator.textContent = 'Reseteando colores...';
                     document.body.appendChild(loadingIndicator);
 
-                    // Desactivar Service Worker temporalmente
-                    if ('serviceWorker' in navigator) {
-                        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                            for(let registration of registrations) {
-                                registration.unregister();
-                            }
+                    // Primero, actualizar la interfaz local
+                    document.querySelectorAll('.sunbed').forEach(hamaca => {
+                        hamaca.classList.remove('step1', 'step2', 'step3', 'step4', 'step5', 'step6');
+                        hamaca.classList.add('step1');
+                    });
+
+                    // Luego, actualizar Firebase
+                    db.ref('sunbeds').once('value').then((snapshot) => {
+                        const updates = {};
+                        snapshot.forEach((childSnapshot) => {
+                            const sunbedId = childSnapshot.key;
+                            const data = childSnapshot.val();
+                            updates[sunbedId] = {
+                                ...data,
+                                color: 'green'
+                            };
                         });
-                    }
 
-                    // Primero obtener todos los datos actuales
-                    db.ref('sunbeds').once('value')
-                        .then((snapshot) => {
-                            if (!snapshot.exists()) {
-                                throw new Error('No se encontraron datos de hamacas');
-                            }
-
-                            const updates = {};
-                            snapshot.forEach((childSnapshot) => {
-                                const sunbedId = childSnapshot.key;
-                                const data = childSnapshot.val();
-                                // Mantener el nombre del cliente, solo cambiar el color a 'green'
-                                updates[sunbedId] = {
-                                    ...data,
-                                    color: 'green'
-                                };
-                            });
-
-                            // Actualizar todos los datos de una vez
-                            return db.ref('sunbeds').update(updates);
-                        })
-                        .then(() => {
-                            // Actualiza la interfaz local inmediatamente
-                            document.querySelectorAll('.sunbed').forEach(hamaca => {
-                                hamaca.classList.remove('step1', 'step2', 'step3', 'step4', 'step5', 'step6');
-                                hamaca.classList.add('step1');
-                            });
-                            console.log("Colores de todas las hamacas reseteados a verde (step1)");
-                            
-                            // Remover indicador de carga
+                        return db.ref('sunbeds').update(updates);
+                    }).then(() => {
+                        // Remover indicador de carga
+                        document.body.removeChild(loadingIndicator);
+                        
+                        // Forzar actualización de la interfaz
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }).catch((error) => {
+                        // Remover indicador de carga en caso de error
+                        if (document.body.contains(loadingIndicator)) {
                             document.body.removeChild(loadingIndicator);
-
-                            // Limpiar caché del Service Worker
-                            if ('caches' in window) {
-                                caches.keys().then(function(names) {
-                                    for (let name of names) {
-                                        caches.delete(name);
-                                    }
-                                });
-                            }
-
-                            // Forzar actualización de la interfaz
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 2000);
-                        })
-                        .catch((error) => {
-                            // Remover indicador de carga en caso de error
-                            if (document.body.contains(loadingIndicator)) {
-                                document.body.removeChild(loadingIndicator);
-                            }
-                            console.error("Error al resetear colores:", error);
-                            alert("Hubo un error al resetear los colores. Por favor, inténtalo de nuevo.");
-                        });
+                        }
+                        console.error("Error al resetear colores:", error);
+                        alert("Hubo un error al resetear los colores. Por favor, inténtalo de nuevo.");
+                    });
                 } catch (error) {
                     console.error("Error de inicialización:", error);
                     alert("Error al inicializar Firebase. Por favor, recarga la página e inténtalo de nuevo.");
@@ -995,77 +967,43 @@ function reiniciarCalculadora() {
             loadingIndicator.textContent = 'Reiniciando calculadora...';
             document.body.appendChild(loadingIndicator);
 
-            // Desactivar Service Worker temporalmente
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                    for(let registration of registrations) {
-                        registration.unregister();
-                    }
-                });
-            }
+            // Primero, actualizar la interfaz local
+            document.getElementById('hamaca').value = '';
+            document.getElementById('totalSelect').selectedIndex = 1;
+            document.getElementById('totalManual').value = '';
+            document.getElementById('recibidoManual').value = '';
+            document.getElementById('pago').selectedIndex = 0;
+            document.getElementById('sombrillaExtra').selectedIndex = 0;
+            document.getElementById('resultado').textContent = '';
+            document.getElementById('historial').innerHTML = '';
+            document.getElementById('totalEfectivo').textContent = '0.00';
+            document.getElementById('totalTarjeta').textContent = '0.00';
+            document.getElementById('totalGeneral').textContent = '0.00';
 
-            // Borrar historial y totales en Firebase
-            const promises = [
-                // Borrar todo el historial de pagos
-                db.ref('historial').remove(),
-                // Resetear los totales a 0
-                db.ref('totales').set({
+            // Luego, actualizar Firebase
+            db.ref().update({
+                'historial': null,
+                'totales': {
                     efectivo: 0,
                     tarjeta: 0,
                     general: 0
-                })
-            ];
-
-            Promise.all(promises)
-                .then(() => {
-                    // Reiniciar campos del formulario
-                    document.getElementById('hamaca').value = '';
-                    document.getElementById('totalSelect').selectedIndex = 1; // 16€ 2 hamacas
-                    document.getElementById('totalManual').value = '';
-                    document.getElementById('recibidoManual').value = '';
-                    document.getElementById('pago').selectedIndex = 0;
-                    document.getElementById('sombrillaExtra').selectedIndex = 0;
-                    document.getElementById('resultado').textContent = '';
-
-                    // Limpiar historial en la interfaz
-                    document.getElementById('historial').innerHTML = '';
-                    
-                    // Reiniciar totales mostrados
-                    document.getElementById('totalEfectivo').textContent = '0.00';
-                    document.getElementById('totalTarjeta').textContent = '0.00';
-                    document.getElementById('totalGeneral').textContent = '0.00';
-
-                    // Reiniciar variables globales
-                    totalEfectivo = 0;
-                    totalTarjeta = 0;
-
-                    // Remover indicador de carga
+                }
+            }).then(() => {
+                // Remover indicador de carga
+                document.body.removeChild(loadingIndicator);
+                
+                // Forzar actualización de la interfaz
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }).catch(error => {
+                // Remover indicador de carga en caso de error
+                if (document.body.contains(loadingIndicator)) {
                     document.body.removeChild(loadingIndicator);
-
-                    // Limpiar caché del Service Worker
-                    if ('caches' in window) {
-                        caches.keys().then(function(names) {
-                            for (let name of names) {
-                                caches.delete(name);
-                            }
-                        });
-                    }
-
-                    // Forzar actualización de la interfaz
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
-
-                    console.log("Calculadora reiniciada correctamente");
-                })
-                .catch(error => {
-                    // Remover indicador de carga en caso de error
-                    if (document.body.contains(loadingIndicator)) {
-                        document.body.removeChild(loadingIndicator);
-                    }
-                    console.error("Error al reiniciar la calculadora:", error);
-                    alert("Hubo un error al reiniciar la calculadora. Por favor, inténtalo de nuevo.");
-                });
+                }
+                console.error("Error al reiniciar la calculadora:", error);
+                alert("Hubo un error al reiniciar la calculadora. Por favor, inténtalo de nuevo.");
+            });
         } catch (error) {
             console.error("Error de inicialización:", error);
             alert("Error al inicializar Firebase. Por favor, recarga la página e inténtalo de nuevo.");
