@@ -612,17 +612,19 @@ var SunbedController = function() {
                         });
                         return db.ref('sunbeds').update(updates);
                     }),
-                    // Actualizar círculos
-                    db.ref('circles').once('value').then((snapshot) => {
-                        const updates = {};
-                        snapshot.forEach((childSnapshot) => {
-                            const circleId = childSnapshot.key;
-                            updates[circleId] = {
-                                step: '1',
-                                lastUpdated: new Date().toISOString()
-                            };
+                    // Actualizar círculos - nuevo enfoque
+                    db.ref('circles').remove().then(() => {
+                        const circleUpdates = {};
+                        document.querySelectorAll('.circle').forEach(circle => {
+                            const circleId = circle.id;
+                            if (circleId) {
+                                circleUpdates[circleId] = {
+                                    step: '1',
+                                    lastUpdated: new Date().toISOString()
+                                };
+                            }
                         });
-                        return db.ref('circles').update(updates);
+                        return db.ref('circles').set(circleUpdates);
                     })
                 ]).then(() => {
                     // Remover indicador de carga
