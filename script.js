@@ -593,8 +593,8 @@ var SunbedController = function() {
                 // Resetear también los círculos en la interfaz
                 document.querySelectorAll('.circle').forEach(circle => {
                     circle.classList.remove('step1', 'step2', 'step3');
-                    circle.classList.add('step1');
-                    circle.dataset.actualStep = '1';
+                    circle.classList.add('step3');
+                    circle.dataset.actualStep = '3';
                 });
 
                 // Luego, actualizar Firebase
@@ -619,14 +619,25 @@ var SunbedController = function() {
                             const circleId = circle.id;
                             if (circleId) {
                                 circleUpdates[circleId] = {
-                                    step: '1',
+                                    step: '3',
                                     lastUpdated: new Date().toISOString()
                                 };
+                                // Actualizar también el estado local
+                                circle.classList.remove('step1', 'step2', 'step3');
+                                circle.classList.add('step3');
+                                circle.dataset.actualStep = '3';
                             }
                         });
                         return db.ref('circles').set(circleUpdates);
                     })
                 ]).then(() => {
+                    // Forzar una actualización de la interfaz
+                    document.querySelectorAll('.circle').forEach(circle => {
+                        circle.classList.remove('step1', 'step2', 'step3');
+                        circle.classList.add('step3');
+                        circle.dataset.actualStep = '3';
+                    });
+
                     // Remover indicador de carga
                     document.body.removeChild(loadingIndicator);
                     
