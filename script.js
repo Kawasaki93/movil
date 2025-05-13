@@ -1527,15 +1527,12 @@ function mostrarHistorialResumen() {
 }
 
 function reiniciarCalculadora() {
-    if (confirm("¿Estás seguro de que deseas reiniciar la calculadora? Se borrará el registro total y el historial de pagos.")) {
+    if (confirm("¿Estás seguro de que deseas reiniciar la calculadora? Se borrará el registro total y el historial visual, pero los datos seguirán disponibles para descargar.")) {
         // Resetear totales en Firebase
         db.ref('totales').set({
             efectivo: 0,
             tarjeta: 0,
             general: 0
-        }).then(() => {
-            // Limpiar historial en Firebase
-            return db.ref('historial').remove();
         }).then(() => {
             // Actualizar la interfaz
             document.getElementById('totalEfectivo').textContent = '0.00';
@@ -1552,7 +1549,7 @@ function reiniciarCalculadora() {
             totalEfectivo = 0;
             totalTarjeta = 0;
             
-            alert('Calculadora reiniciada correctamente');
+            alert('Calculadora reiniciada correctamente. Los datos históricos siguen disponibles para descargar.');
         }).catch(error => {
             console.error("Error al reiniciar la calculadora:", error);
             alert("Hubo un error al reiniciar la calculadora. Por favor, inténtalo de nuevo.");
