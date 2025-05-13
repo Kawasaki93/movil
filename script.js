@@ -1360,200 +1360,110 @@ $(document).ready(function() {
 
 // --- Sincronización del registro total ---
 $(document).ready(function() {
-  db.ref('historial').on('value', (snapshot) => {
-    const historial = snapshot.val();
-    let totalEfectivo = 0;
-    let totalTarjeta = 0;
-    if (historial) {
-      Object.values(historial).forEach(entry => {
-        if (!entry.devolucion) {
-          const total = parseFloat(entry.total);
-          if (entry.metodo === 'efectivo') {
-            totalEfectivo += total;
-          } else {
-            totalTarjeta += total;
-          }
-        } else {
-          const total = parseFloat(entry.total);
-          if (entry.metodo === 'efectivo') {
-            totalEfectivo -= total;
-          } else {
-            totalTarjeta -= total;
-          }
+    // Escuchar cambios en los totales
+    db.ref('totales').on('value', (snapshot) => {
+        const totales = snapshot.val() || { efectivo: 0, tarjeta: 0, general: 0 };
+        $("#totalEfectivo").text(parseFloat(totales.efectivo).toFixed(2));
+        $("#totalTarjeta").text(parseFloat(totales.tarjeta).toFixed(2));
+        $("#totalGeneral").text(parseFloat(totales.general).toFixed(2));
+    });
+
+    // Escuchar cambios en el historial
+    db.ref('historial').on('value', (snapshot) => {
+        const historial = snapshot.val();
+        const $historial = $('#historial');
+        $historial.empty();
+        
+        if (historial) {
+            Object.values(historial).reverse().forEach(entry => {
+                const li = document.createElement('li');
+                if (entry.devolucion) {
+                    li.textContent = `Devolución Hamaca ${entry.hamaca} - Total: €${entry.total} - Devolución: €${entry.devolucion} - Método: ${entry.metodo} - ${entry.fecha}`;
+                } else {
+                    li.textContent = `Hamaca ${entry.hamaca} - Total: €${entry.total} - Recibido: €${entry.recibido} - Cambio: €${entry.cambio} - Método: ${entry.metodo} - ${entry.fecha}`;
+                }
+                $historial.prepend(li);
+            });
         }
-      });
-    }
-    $("#totalEfectivo").text(totalEfectivo.toFixed(2));
-    $("#totalTarjeta").text(totalTarjeta.toFixed(2));
-    $("#totalGeneral").text((totalEfectivo + totalTarjeta).toFixed(2));
-  });
+    });
 });
 
-// Función para crear y mostrar el diálogo personalizado
-function showCustomDialog(message, onConfirm, onCancel) {
-    // Crear el contenedor del diálogo
-    const dialog = document.createElement('div');
-    dialog.style.position = 'fixed';
-    dialog.style.top = '0';
-    dialog.style.left = '0';
-    dialog.style.width = '100%';
-    dialog.style.height = '100%';
-    dialog.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    dialog.style.display = 'flex';
-    dialog.style.justifyContent = 'center';
-    dialog.style.alignItems = 'center';
-    dialog.style.zIndex = '9999';
-
-    // Crear el contenido del diálogo
-    const content = document.createElement('div');
-    content.style.backgroundColor = 'white';
-    content.style.padding = '20px';
-    content.style.borderRadius = '10px';
-    content.style.width = '80%';
-    content.style.maxWidth = '400px';
-    content.style.textAlign = 'center';
-
-    // Crear el mensaje
-    const messageElement = document.createElement('p');
-    messageElement.textContent = message;
-    messageElement.style.marginBottom = '20px';
-    content.appendChild(messageElement);
-
-    // Crear los botones
-    const buttonContainer = document.createElement('div');
-    buttonContainer.style.display = 'flex';
-    buttonContainer.style.justifyContent = 'center';
-    buttonContainer.style.gap = '10px';
-
-    const confirmButton = document.createElement('button');
-    confirmButton.textContent = 'Sí';
-    confirmButton.style.padding = '10px 20px';
-    confirmButton.style.backgroundColor = '#4CAF50';
-    confirmButton.style.color = 'white';
-    confirmButton.style.border = 'none';
-    confirmButton.style.borderRadius = '5px';
-    confirmButton.style.cursor = 'pointer';
-    confirmButton.style.fontSize = '16px';
-
-    const cancelButton = document.createElement('button');
-    cancelButton.textContent = 'No';
-    cancelButton.style.padding = '10px 20px';
-    cancelButton.style.backgroundColor = '#f44336';
-    cancelButton.style.color = 'white';
-    cancelButton.style.border = 'none';
-    cancelButton.style.borderRadius = '5px';
-    cancelButton.style.cursor = 'pointer';
-    cancelButton.style.fontSize = '16px';
-
-    buttonContainer.appendChild(confirmButton);
-    buttonContainer.appendChild(cancelButton);
-    content.appendChild(buttonContainer);
-    dialog.appendChild(content);
-
-    // Añadir el diálogo al body
-    document.body.appendChild(dialog);
-
-    // Funciones para los botones
-    confirmButton.onclick = () => {
-        document.body.removeChild(dialog);
-        if (onConfirm) onConfirm();
-    };
-
-    cancelButton.onclick = () => {
-        document.body.removeChild(dialog);
-        if (onCancel) onCancel();
-    };
-}
-function mostrarHistorialResumen() {
-  const historialContainer = document.getElementById('historialContainer');
-  const historial = document.getElementById('historial');
-  
-  if (!historialContainer || !historial) {
-    console.error('No se encontraron los elementos del historial');
-    return;
-  }
-
-  // Mostrar el contenedor
-  historialContainer.style.display = 'block';
-  
-  // Limpiar el historial actual
-  historial.innerHTML = '';
-  
-  // Obtener el historial de Firebase
-  const historialRef = ref(db, 'historial');
-  get(historialRef).then((snapshot) => {
-    if (snapshot.exists()) {
-      const historialData = snapshot.val();
-      const historialArray = Object.entries(historialData)
-        .map(([id, data]) => ({
-          id,
-          ...data,
-          timestamp: data.timestamp || 0
-        }))
-        .sort((a, b) => b.timestamp - a.timestamp);
-
-      if (historialArray.length === 0) {
-        historial.innerHTML = '<li>No hay registros en el historial</li>';
-        return;
-      }
-
-      historialArray.forEach(registro => {
-        const li = document.createElement('li');
-        const fecha = new Date(registro.timestamp);
-        const fechaFormateada = fecha.toLocaleString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        
-        li.innerHTML = `
-          <strong>${fechaFormateada}</strong><br>
-          Cliente: ${registro.cliente}<br>
-          Importe: ${registro.importe}€<br>
-          Pago: ${registro.pago}€<br>
-          Cambio: ${registro.cambio}€
-        `;
-        historial.appendChild(li);
-      });
-    } else {
-      historial.innerHTML = '<li>No hay registros en el historial</li>';
-    }
-  }).catch(error => {
-    console.error('Error al obtener el historial:', error);
-    historial.innerHTML = '<li>Error al cargar el historial</li>';
-  });
-}
-
 function reiniciarCalculadora() {
-    if (confirm("¿Estás seguro de que deseas reiniciar la calculadora? Se borrará el registro total y el historial visual, pero los datos seguirán disponibles para descargar.")) {
-        // Resetear totales en Firebase
-        db.ref('totales').set({
-            efectivo: 0,
-            tarjeta: 0,
-            general: 0
+    if (confirm("¿Estás seguro de que deseas reiniciar la calculadora? Se borrará el registro total actual y el historial de pagos.")) {
+        // 1. Limpiar el historial visual
+        const historial = document.getElementById('historial');
+        if (historial) {
+            historial.innerHTML = '';
+        }
+
+        // 2. Resetear los totales en la interfaz
+        document.getElementById('totalEfectivo').textContent = '0.00';
+        document.getElementById('totalTarjeta').textContent = '0.00';
+        document.getElementById('totalGeneral').textContent = '0.00';
+
+        // 3. Resetear variables globales
+        totalEfectivo = 0;
+        totalTarjeta = 0;
+
+        // 4. Crear el registro de reinicio
+        const fechaObj = new Date();
+        const dia = String(fechaObj.getDate()).padStart(2, '0');
+        const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
+        const anio = fechaObj.getFullYear();
+        const horas = String(fechaObj.getHours()).padStart(2, '0');
+        const minutos = String(fechaObj.getMinutes()).padStart(2, '0');
+        const fecha = `${dia}/${mes}/${anio} ${horas}:${minutos}`;
+
+        // 5. Limpiar y reiniciar todo en Firebase
+        Promise.all([
+            // Limpiar el historial
+            db.ref('historial').remove(),
+            // Limpiar los totales
+            db.ref('totales').remove(),
+            // Limpiar cualquier otro dato relacionado
+            db.ref('registro_actual').remove()
+        ]).then(() => {
+            // 6. Establecer nuevos totales en 0
+            return db.ref('totales').set({
+                efectivo: 0,
+                tarjeta: 0,
+                general: 0
+            });
         }).then(() => {
-            // Actualizar la interfaz
-            document.getElementById('totalEfectivo').textContent = '0.00';
-            document.getElementById('totalTarjeta').textContent = '0.00';
-            document.getElementById('totalGeneral').textContent = '0.00';
-            
-            // Limpiar el historial visual
-            const historial = document.getElementById('historial');
-            if (historial) {
-                historial.innerHTML = '';
-            }
-            
-            // Reiniciar variables globales
-            totalEfectivo = 0;
-            totalTarjeta = 0;
-            
-            alert('Calculadora reiniciada correctamente. Los datos históricos siguen disponibles para descargar.');
+            // 7. Forzar una recarga de la página
+            window.location.reload();
         }).catch(error => {
             console.error("Error al reiniciar la calculadora:", error);
             alert("Hubo un error al reiniciar la calculadora. Por favor, inténtalo de nuevo.");
         });
     }
 }
+
+// Modificar la función de sincronización inicial
+$(document).ready(function() {
+    // Verificar si hay un reinicio pendiente
+    db.ref('reinicio_pendiente').once('value').then((snapshot) => {
+        const reinicioPendiente = snapshot.val();
+        if (reinicioPendiente) {
+            // Si hay un reinicio pendiente, limpiar todo
+            Promise.all([
+                db.ref('historial').remove(),
+                db.ref('totales').remove(),
+                db.ref('registro_actual').remove()
+            ]).then(() => {
+                // Establecer totales en 0
+                return db.ref('totales').set({
+                    efectivo: 0,
+                    tarjeta: 0,
+                    general: 0
+                });
+            }).then(() => {
+                // Eliminar la marca de reinicio pendiente
+                return db.ref('reinicio_pendiente').remove();
+            }).catch(error => {
+                console.error("Error al procesar reinicio pendiente:", error);
+            });
+        }
+    });
+});
 
