@@ -852,96 +852,101 @@ function toggleHistorial() {
 }
 
 function descargarHistorial() {
-  console.log('Iniciando descarga de historial...');
-  db.ref('historial').once('value').then((snapshot) => {
-    if (!snapshot.exists()) {
-      console.log('No hay datos en el historial');
-      alert('No hay datos en el historial para descargar');
-      return;
-    }
-
-    const historialData = snapshot.val();
-    console.log('Datos obtenidos:', historialData);
-  const resumenDiario = {};
-  const resumenMensual = {};
-
-    // Procesar los datos
-    Object.entries(historialData).forEach(([key, entry]) => {
-      console.log('Procesando entrada:', entry);
-      if (!entry.fecha) {
-        console.log('Entrada sin fecha, saltando:', entry);
-        return;
-      }
-
-      // Convertir la fecha del formato DD/MM/YYYY HH:MM a objeto Date
-      const [fechaPart, horaPart] = entry.fecha.split(' ');
-      const [dia, mes, anio] = fechaPart.split('/');
-      const fecha = new Date(anio, mes - 1, dia);
-
-    const diaClave = `${String(fecha.getDate()).padStart(2, '0')}/${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
-    const mesClave = `${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
-    const total = parseFloat(entry.total || 0);
-      const metodo = entry.metodo || 'efectivo';
-
-    if (!resumenDiario[diaClave]) {
-      resumenDiario[diaClave] = { efectivo: 0, tarjeta: 0 };
-    }
-    if (!resumenMensual[mesClave]) {
-      resumenMensual[mesClave] = { efectivo: 0, tarjeta: 0 };
-    }
-
-      if (entry.devolucion) {
-        // Restar en caso de devolución
-        if (metodo === 'efectivo') {
-          resumenDiario[diaClave].efectivo -= total;
-          resumenMensual[mesClave].efectivo -= total;
-        } else {
-          resumenDiario[diaClave].tarjeta -= total;
-          resumenMensual[mesClave].tarjeta -= total;
+    console.log('Iniciando descarga de historial...');
+    db.ref('historial').once('value').then((snapshot) => {
+        if (!snapshot.exists()) {
+            console.log('No hay datos en el historial');
+            alert('No hay datos en el historial para descargar');
+            return;
         }
-      } else {
-        // Sumar en caso de pago normal
-    if (metodo === 'efectivo') {
-      resumenDiario[diaClave].efectivo += total;
-      resumenMensual[mesClave].efectivo += total;
-    } else {
-      resumenDiario[diaClave].tarjeta += total;
-      resumenMensual[mesClave].tarjeta += total;
+
+        const historialData = snapshot.val();
+        console.log('Datos obtenidos:', historialData);
+        const resumenDiario = {};
+        const resumenMensual = {};
+
+        // Procesar los datos
+        Object.entries(historialData).forEach(([key, entry]) => {
+            console.log('Procesando entrada:', entry);
+            if (!entry.fecha) {
+                console.log('Entrada sin fecha, saltando:', entry);
+                return;
+            }
+
+            // Convertir la fecha del formato DD/MM/YYYY HH:MM a objeto Date
+            const [fechaPart, horaPart] = entry.fecha.split(' ');
+            const [dia, mes, anio] = fechaPart.split('/');
+            const fecha = new Date(anio, mes - 1, dia);
+
+            const diaClave = `${String(fecha.getDate()).padStart(2, '0')}/${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
+            const mesClave = `${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
+            const total = parseFloat(entry.total || 0);
+            const metodo = entry.metodo || 'efectivo';
+
+            // Inicializar los totales si no existen
+            if (!resumenDiario[diaClave]) {
+                resumenDiario[diaClave] = { efectivo: 0, tarjeta: 0, reinicios: 0 };
+            }
+            if (!resumenMensual[mesClave]) {
+                resumenMensual[mesClave] = { efectivo: 0, tarjeta: 0, reinicios: 0 };
+            }
+
+            // Procesar según el tipo de entrada
+            if (entry.reinicio) {
+                resumenDiario[diaClave].reinicios++;
+                resumenMensual[mesClave].reinicios++;
+            } else if (entry.devolucion) {
+                // Restar en caso de devolución
+                if (metodo === 'efectivo') {
+                    resumenDiario[diaClave].efectivo -= total;
+                    resumenMensual[mesClave].efectivo -= total;
+                } else {
+                    resumenDiario[diaClave].tarjeta -= total;
+                    resumenMensual[mesClave].tarjeta -= total;
+                }
+            } else {
+                // Sumar en caso de pago normal
+                if (metodo === 'efectivo') {
+                    resumenDiario[diaClave].efectivo += total;
+                    resumenMensual[mesClave].efectivo += total;
+                } else {
+                    resumenDiario[diaClave].tarjeta += total;
+                    resumenMensual[mesClave].tarjeta += total;
+                }
+            }
+        });
+
+        console.log('Resumen diario:', resumenDiario);
+        console.log('Resumen mensual:', resumenMensual);
+
+        // Generar CSV
+        let csv = "Resumen Diario\nDía,Efectivo,Tarjeta,Total,Reinicios\n";
+        for (let dia in resumenDiario) {
+            const d = resumenDiario[dia];
+            csv += `${dia},${d.efectivo.toFixed(2)},${d.tarjeta.toFixed(2)},${(d.efectivo + d.tarjeta).toFixed(2)},${d.reinicios}\n`;
         }
-    }
-  });
 
-    console.log('Resumen diario:', resumenDiario);
-    console.log('Resumen mensual:', resumenMensual);
+        csv += "\nResumen Mensual\nMes,Efectivo,Tarjeta,Total,Reinicios\n";
+        for (let mes in resumenMensual) {
+            const m = resumenMensual[mes];
+            csv += `${mes},${m.efectivo.toFixed(2)},${m.tarjeta.toFixed(2)},${(m.efectivo + m.tarjeta).toFixed(2)},${m.reinicios}\n`;
+        }
 
-    // Generar CSV
-  let csv = "Resumen Diario\nDía,Efectivo,Tarjeta,Total\n";
-  for (let dia in resumenDiario) {
-    const d = resumenDiario[dia];
-    csv += `${dia},${d.efectivo.toFixed(2)},${d.tarjeta.toFixed(2)},${(d.efectivo + d.tarjeta).toFixed(2)}\n`;
-  }
+        console.log('CSV generado:', csv);
 
-  csv += "\nResumen Mensual\nMes,Efectivo,Tarjeta,Total\n";
-  for (let mes in resumenMensual) {
-    const m = resumenMensual[mes];
-    csv += `${mes},${m.efectivo.toFixed(2)},${m.tarjeta.toFixed(2)},${(m.efectivo + m.tarjeta).toFixed(2)}\n`;
-  }
-
-    console.log('CSV generado:', csv);
-
-    // Crear y descargar el archivo
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-    link.setAttribute("download", `resumen_contabilidad_${new Date().getFullYear()}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  }).catch(error => {
-    console.error('Error al descargar el historial:', error);
-    alert('Error al descargar el historial. Por favor, inténtalo de nuevo.');
-  });
+        // Crear y descargar el archivo
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `resumen_contabilidad_${new Date().getFullYear()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }).catch(error => {
+        console.error('Error al descargar el historial:', error);
+        alert('Error al descargar el historial. Por favor, inténtalo de nuevo.');
+    });
 }
 
 function descargarLog() {
@@ -1349,6 +1354,10 @@ $(document).ready(function() {
         const li = document.createElement('li');
         if (entry.devolucion) {
           li.textContent = `Devolución Hamaca ${entry.hamaca} - Total: €${entry.total} - Devolución: €${entry.devolucion} - Método: ${entry.metodo} - ${entry.fecha}`;
+        } else if (entry.reinicio) {
+          li.textContent = `--- REINICIO DE CALCULADORA - ${entry.fecha} ---`;
+          li.style.fontWeight = 'bold';
+          li.style.color = '#ff0000';
         } else {
           li.textContent = `Hamaca ${entry.hamaca} - Total: €${entry.total} - Recibido: €${entry.recibido} - Cambio: €${entry.cambio} - Método: ${entry.metodo} - ${entry.fecha}`;
         }
@@ -1379,6 +1388,10 @@ $(document).ready(function() {
                 const li = document.createElement('li');
                 if (entry.devolucion) {
                     li.textContent = `Devolución Hamaca ${entry.hamaca} - Total: €${entry.total} - Devolución: €${entry.devolucion} - Método: ${entry.metodo} - ${entry.fecha}`;
+                } else if (entry.reinicio) {
+                    li.textContent = `--- REINICIO DE CALCULADORA - ${entry.fecha} ---`;
+                    li.style.fontWeight = 'bold';
+                    li.style.color = '#ff0000';
                 } else {
                     li.textContent = `Hamaca ${entry.hamaca} - Total: €${entry.total} - Recibido: €${entry.recibido} - Cambio: €${entry.cambio} - Método: ${entry.metodo} - ${entry.fecha}`;
                 }
@@ -1389,7 +1402,7 @@ $(document).ready(function() {
 });
 
 function reiniciarCalculadora() {
-    if (confirm("¿Estás seguro de que deseas reiniciar la calculadora? Se borrará el registro total actual y el historial de pagos.")) {
+    if (confirm("¿Estás seguro de que deseas reiniciar la calculadora? Se borrará el registro total actual, pero se mantendrá el historial de operaciones.")) {
         // 1. Limpiar el historial visual
         const historial = document.getElementById('historial');
         if (historial) {
@@ -1416,21 +1429,31 @@ function reiniciarCalculadora() {
 
         // 5. Limpiar y reiniciar todo en Firebase
         Promise.all([
-            // Limpiar el historial
-            db.ref('historial').remove(),
             // Limpiar los totales
             db.ref('totales').remove(),
-            // Limpiar cualquier otro dato relacionado
+            // Limpiar el registro actual
             db.ref('registro_actual').remove()
         ]).then(() => {
-            // 6. Establecer nuevos totales en 0
+            // 6. Guardar el registro de reinicio en el historial
+            return guardarHistorialPago({
+                fecha,
+                timestamp: fechaObj.getTime(),
+                hamaca: "-",
+                total: "0.00",
+                recibido: "0.00",
+                cambio: "0.00",
+                metodo: "reinicio",
+                reinicio: true
+            });
+        }).then(() => {
+            // 7. Establecer nuevos totales en 0
             return db.ref('totales').set({
                 efectivo: 0,
                 tarjeta: 0,
                 general: 0
             });
         }).then(() => {
-            // 7. Forzar una recarga de la página
+            // 8. Forzar una recarga de la página
             window.location.reload();
         }).catch(error => {
             console.error("Error al reiniciar la calculadora:", error);
