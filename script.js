@@ -360,7 +360,7 @@ function clearClick() {
                 totalTarjeta = 0;
 
                 // Recargar la página para asegurar que todo se actualiza
-                window.location.reload();
+        window.location.reload();
             })
             .catch(error => {
                 console.error("Error al resetear los datos:", error);
@@ -637,7 +637,7 @@ var SunbedController = function() {
                     
                     // Forzar actualización de la interfaz
                     setTimeout(() => {
-                        window.location.reload();
+                window.location.reload();
                     }, 2000);
                 }).catch((error) => {
                     // Remover indicador de carga en caso de error
@@ -758,9 +758,9 @@ function calcularCambio() {
   // Actualizar totales en Firebase
   db.ref('totales').transaction((currentTotales) => {
     const totales = currentTotales || { efectivo: 0, tarjeta: 0, general: 0 };
-    if (metodo === 'efectivo') {
+  if (metodo === 'efectivo') {
       totales.efectivo = (parseFloat(totales.efectivo) || 0) + total;
-    } else {
+  } else {
       totales.tarjeta = (parseFloat(totales.tarjeta) || 0) + total;
     }
     totales.general = totales.efectivo + totales.tarjeta;
@@ -820,9 +820,9 @@ function procesarDevolucion() {
   // Actualizar totales en Firebase
   db.ref('totales').transaction((currentTotales) => {
     const totales = currentTotales || { efectivo: 0, tarjeta: 0, general: 0 };
-    if (metodo === 'efectivo') {
+  if (metodo === 'efectivo') {
       totales.efectivo = (parseFloat(totales.efectivo) || 0) - total;
-    } else {
+  } else {
       totales.tarjeta = (parseFloat(totales.tarjeta) || 0) - total;
     }
     totales.general = totales.efectivo + totales.tarjeta;
@@ -851,238 +851,151 @@ function toggleHistorial() {
   historialContainer.style.display = historialContainer.style.display === 'none' ? 'block' : 'none';
 }
 
-function mostrarHistorialResumen() {
-  const historialContainer = document.getElementById('historialContainer');
-  const historial = document.getElementById('historial');
-  
-  if (!historialContainer || !historial) {
-    console.error('No se encontraron los elementos del historial');
-    return;
-  }
+function descargarHistorial() {
+    console.log('Iniciando descarga de historial...');
+    db.ref('historial').once('value').then((snapshot) => {
+        if (!snapshot.exists()) {
+            console.log('No hay datos en el historial');
+            alert('No hay datos en el historial para descargar');
+            return;
+        }
 
-  // Mostrar el contenedor
-  historialContainer.style.display = 'block';
-  
-  // Limpiar el historial actual
-  historial.innerHTML = '';
-  
-  // Mostrar indicador de carga
-  historial.innerHTML = '<li>Cargando historial...</li>';
-  
-  // Obtener el historial de Firebase
-  db.ref('historial').once('value')
-    .then((snapshot) => {
-      if (!snapshot.exists()) {
-        historial.innerHTML = '<li>No hay registros en el historial</li>';
-        return;
-      }
+        const historialData = snapshot.val();
+        console.log('Datos obtenidos:', historialData);
+        const resumenDiario = {};
+        const resumenMensual = {};
 
-      const historialData = snapshot.val();
-      const historialArray = Object.entries(historialData)
-        .map(([id, data]) => ({
-          id,
-          ...data
-        }))
-        .sort((a, b) => {
-          try {
-            const fechaA = new Date(a.fecha.split(' ')[0].split('/').reverse().join('-'));
-            const fechaB = new Date(b.fecha.split(' ')[0].split('/').reverse().join('-'));
-            return fechaB - fechaA;
-          } catch (error) {
-            console.error('Error al ordenar fechas:', error);
-            return 0;
-          }
+        // Procesar los datos
+        Object.entries(historialData).forEach(([key, entry]) => {
+            console.log('Procesando entrada:', entry);
+            if (!entry.fecha) {
+                console.log('Entrada sin fecha, saltando:', entry);
+                return;
+            }
+
+            // Convertir la fecha del formato DD/MM/YYYY HH:MM a objeto Date
+            const [fechaPart, horaPart] = entry.fecha.split(' ');
+            const [dia, mes, anio] = fechaPart.split('/');
+            const fecha = new Date(anio, mes - 1, dia);
+
+            const diaClave = `${String(fecha.getDate()).padStart(2, '0')}/${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
+            const mesClave = `${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
+            const total = parseFloat(entry.total || 0);
+            const metodo = entry.metodo || 'efectivo';
+
+            // Inicializar los totales si no existen
+            if (!resumenDiario[diaClave]) {
+                resumenDiario[diaClave] = { efectivo: 0, tarjeta: 0, reinicios: 0 };
+            }
+            if (!resumenMensual[mesClave]) {
+                resumenMensual[mesClave] = { efectivo: 0, tarjeta: 0, reinicios: 0 };
+            }
+
+            // Procesar según el tipo de entrada
+            if (entry.reinicio) {
+                resumenDiario[diaClave].reinicios++;
+                resumenMensual[mesClave].reinicios++;
+            } else if (entry.devolucion) {
+                // Restar en caso de devolución
+                if (metodo === 'efectivo') {
+                    resumenDiario[diaClave].efectivo -= total;
+                    resumenMensual[mesClave].efectivo -= total;
+                } else {
+                    resumenDiario[diaClave].tarjeta -= total;
+                    resumenMensual[mesClave].tarjeta -= total;
+                }
+            } else {
+                // Sumar en caso de pago normal
+                if (metodo === 'efectivo') {
+                    resumenDiario[diaClave].efectivo += total;
+                    resumenMensual[mesClave].efectivo += total;
+                } else {
+                    resumenDiario[diaClave].tarjeta += total;
+                    resumenMensual[mesClave].tarjeta += total;
+                }
+            }
         });
 
-      historial.innerHTML = ''; // Limpiar el mensaje de carga
+        console.log('Resumen diario:', resumenDiario);
+        console.log('Resumen mensual:', resumenMensual);
 
-      historialArray.forEach(registro => {
-        try {
-          const li = document.createElement('li');
-          if (registro.devolucion) {
-            li.textContent = `Devolución Hamaca ${registro.hamaca} - Total: €${registro.total} - Devolución: €${registro.devolucion} - Método: ${registro.metodo} - ${registro.fecha}`;
-          } else {
-            const sombrillaInfo = registro.sombrillaExtra ? ' (Sombrilla Extra)' : '';
-            li.textContent = `Hamaca ${registro.hamaca} - Total: €${registro.total}${sombrillaInfo} - Recibido: €${registro.recibido} - Cambio: €${registro.cambio} - Método: ${registro.metodo} - ${registro.fecha}`;
-          }
-          historial.appendChild(li);
-        } catch (error) {
-          console.error('Error al procesar registro:', error, registro);
+        // Generar CSV
+        let csv = "Resumen Diario\nDía,Efectivo,Tarjeta,Total,Reinicios\n";
+        for (let dia in resumenDiario) {
+            const d = resumenDiario[dia];
+            csv += `${dia},${d.efectivo.toFixed(2)},${d.tarjeta.toFixed(2)},${(d.efectivo + d.tarjeta).toFixed(2)},${d.reinicios}\n`;
         }
-      });
-    })
-    .catch(error => {
-      console.error('Error al obtener el historial:', error);
-      historial.innerHTML = '<li>Error al cargar el historial. Por favor, inténtalo de nuevo.</li>';
-    });
-}
 
-function descargarHistorial() {
-  console.log('Iniciando descarga de historial...');
-  
-  // Mostrar indicador de carga
-  const loadingIndicator = document.createElement('div');
-  loadingIndicator.style.position = 'fixed';
-  loadingIndicator.style.top = '50%';
-  loadingIndicator.style.left = '50%';
-  loadingIndicator.style.transform = 'translate(-50%, -50%)';
-  loadingIndicator.style.padding = '20px';
-  loadingIndicator.style.background = 'rgba(0,0,0,0.8)';
-  loadingIndicator.style.color = 'white';
-  loadingIndicator.style.borderRadius = '10px';
-  loadingIndicator.style.zIndex = '9999';
-  loadingIndicator.textContent = 'Preparando descarga...';
-  document.body.appendChild(loadingIndicator);
-
-  db.ref('historial').once('value')
-    .then((snapshot) => {
-      if (!snapshot.exists()) {
-        document.body.removeChild(loadingIndicator);
-        alert('No hay datos en el historial para descargar');
-        return;
-      }
-
-      const historialData = snapshot.val();
-      const resumenDiario = {};
-      const resumenMensual = {};
-
-      // Procesar los datos
-      Object.entries(historialData).forEach(([key, entry]) => {
-        try {
-          if (!entry.fecha) return;
-
-          const [fechaPart, horaPart] = entry.fecha.split(' ');
-          const [dia, mes, anio] = fechaPart.split('/');
-          const fecha = new Date(anio, mes - 1, dia);
-
-          const diaClave = `${String(fecha.getDate()).padStart(2, '0')}/${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
-          const mesClave = `${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
-          const total = parseFloat(entry.total || 0);
-          const metodo = entry.metodo || 'efectivo';
-
-          if (!resumenDiario[diaClave]) {
-            resumenDiario[diaClave] = { efectivo: 0, tarjeta: 0 };
-          }
-          if (!resumenMensual[mesClave]) {
-            resumenMensual[mesClave] = { efectivo: 0, tarjeta: 0 };
-          }
-
-          if (entry.devolucion) {
-            if (metodo === 'efectivo') {
-              resumenDiario[diaClave].efectivo -= total;
-              resumenMensual[mesClave].efectivo -= total;
-            } else {
-              resumenDiario[diaClave].tarjeta -= total;
-              resumenMensual[mesClave].tarjeta -= total;
-            }
-          } else {
-            if (metodo === 'efectivo') {
-              resumenDiario[diaClave].efectivo += total;
-              resumenMensual[mesClave].efectivo += total;
-            } else {
-              resumenDiario[diaClave].tarjeta += total;
-              resumenMensual[mesClave].tarjeta += total;
-            }
-          }
-        } catch (error) {
-          console.error('Error al procesar entrada:', error, entry);
+        csv += "\nResumen Mensual\nMes,Efectivo,Tarjeta,Total,Reinicios\n";
+        for (let mes in resumenMensual) {
+            const m = resumenMensual[mes];
+            csv += `${mes},${m.efectivo.toFixed(2)},${m.tarjeta.toFixed(2)},${(m.efectivo + m.tarjeta).toFixed(2)},${m.reinicios}\n`;
         }
-      });
 
-      // Generar CSV
-      let csv = "Resumen Diario\nDía,Efectivo,Tarjeta,Total\n";
-      for (let dia in resumenDiario) {
-        const d = resumenDiario[dia];
-        csv += `${dia},${d.efectivo.toFixed(2)},${d.tarjeta.toFixed(2)},${(d.efectivo + d.tarjeta).toFixed(2)}\n`;
-      }
+        console.log('CSV generado:', csv);
 
-      csv += "\nResumen Mensual\nMes,Efectivo,Tarjeta,Total\n";
-      for (let mes in resumenMensual) {
-        const m = resumenMensual[mes];
-        csv += `${mes},${m.efectivo.toFixed(2)},${m.tarjeta.toFixed(2)},${(m.efectivo + m.tarjeta).toFixed(2)}\n`;
-      }
-
-      // Crear y descargar el archivo
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `resumen_contabilidad_${new Date().getFullYear()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      document.body.removeChild(loadingIndicator);
-    })
-    .catch(error => {
-      console.error('Error al descargar el historial:', error);
-      document.body.removeChild(loadingIndicator);
-      alert('Error al descargar el historial. Por favor, inténtalo de nuevo.');
+        // Crear y descargar el archivo
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `resumen_contabilidad_${new Date().getFullYear()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }).catch(error => {
+        console.error('Error al descargar el historial:', error);
+        alert('Error al descargar el historial. Por favor, inténtalo de nuevo.');
     });
 }
 
 function descargarLog() {
   console.log('Iniciando descarga de log...');
-  
-  // Mostrar indicador de carga
-  const loadingIndicator = document.createElement('div');
-  loadingIndicator.style.position = 'fixed';
-  loadingIndicator.style.top = '50%';
-  loadingIndicator.style.left = '50%';
-  loadingIndicator.style.transform = 'translate(-50%, -50%)';
-  loadingIndicator.style.padding = '20px';
-  loadingIndicator.style.background = 'rgba(0,0,0,0.8)';
-  loadingIndicator.style.color = 'white';
-  loadingIndicator.style.borderRadius = '10px';
-  loadingIndicator.style.zIndex = '9999';
-  loadingIndicator.textContent = 'Preparando descarga...';
-  document.body.appendChild(loadingIndicator);
+  db.ref('historial').once('value').then((snapshot) => {
+    if (!snapshot.exists()) {
+      console.log('No hay datos en el log');
+      alert('No hay datos en el log para descargar');
+      return;
+    }
 
-  db.ref('historial').once('value')
-    .then((snapshot) => {
-      if (!snapshot.exists()) {
-        document.body.removeChild(loadingIndicator);
-        alert('No hay datos en el log para descargar');
+    const historialData = snapshot.val();
+    console.log('Datos obtenidos:', historialData);
+    let csv = "Fecha,Hora,Hamaca,Total,Pago,Cambio,Método,Sombrilla Extra\n";
+
+    // Procesar los datos
+    Object.entries(historialData).forEach(([key, entry]) => {
+      console.log('Procesando entrada:', entry);
+      if (!entry.fecha) {
+        console.log('Entrada sin fecha, saltando:', entry);
         return;
       }
 
-      const historialData = snapshot.val();
-      let csv = "Fecha,Hora,Hamaca,Total,Pago,Cambio,Método,Sombrilla Extra\n";
+      const [fechaPart, horaPart] = entry.fecha.split(' ');
+      const total = entry.total || '0';
+      const pago = entry.recibido || '0';
+      const cambio = entry.cambio || '0';
+      const metodo = entry.metodo || 'N/A';
+      const hamaca = entry.hamaca || 'N/A';
+      const sombrillaExtra = entry.sombrillaExtra ? 'Sí' : 'No';
 
-      // Procesar los datos
-      Object.entries(historialData).forEach(([key, entry]) => {
-        try {
-          if (!entry.fecha) return;
-
-          const [fechaPart, horaPart] = entry.fecha.split(' ');
-          const total = entry.total || '0';
-          const pago = entry.recibido || '0';
-          const cambio = entry.cambio || '0';
-          const metodo = entry.metodo || 'N/A';
-          const hamaca = entry.hamaca || 'N/A';
-          const sombrillaExtra = entry.sombrillaExtra ? 'Sí' : 'No';
-
-          csv += `${fechaPart},${horaPart},${hamaca},${total},${pago},${cambio},${metodo},${sombrillaExtra}\n`;
-        } catch (error) {
-          console.error('Error al procesar entrada:', error, entry);
-        }
-      });
-
-      // Crear y descargar el archivo
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `log_operaciones_${new Date().getFullYear()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      document.body.removeChild(loadingIndicator);
-    })
-    .catch(error => {
-      console.error('Error al descargar el log:', error);
-      document.body.removeChild(loadingIndicator);
-      alert('Error al descargar el log. Por favor, inténtalo de nuevo.');
+      csv += `${fechaPart},${horaPart},${hamaca},${total},${pago},${cambio},${metodo},${sombrillaExtra}\n`;
     });
+
+    console.log('CSV generado:', csv);
+
+    // Crear y descargar el archivo
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+    link.setAttribute("download", `log_operaciones_${new Date().getFullYear()}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  }).catch(error => {
+    console.error('Error al descargar el log:', error);
+    alert('Error al descargar el log. Por favor, inténtalo de nuevo.');
+  });
 }
 
 //FUNCIONAMIENTO DE SERVICE WORKER NO TOCAR
@@ -1441,6 +1354,10 @@ $(document).ready(function() {
         const li = document.createElement('li');
         if (entry.devolucion) {
           li.textContent = `Devolución Hamaca ${entry.hamaca} - Total: €${entry.total} - Devolución: €${entry.devolucion} - Método: ${entry.metodo} - ${entry.fecha}`;
+        } else if (entry.reinicio) {
+          li.textContent = `--- REINICIO DE CALCULADORA - ${entry.fecha} ---`;
+          li.style.fontWeight = 'bold';
+          li.style.color = '#ff0000';
         } else {
           li.textContent = `Hamaca ${entry.hamaca} - Total: €${entry.total} - Recibido: €${entry.recibido} - Cambio: €${entry.cambio} - Método: ${entry.metodo} - ${entry.fecha}`;
         }
@@ -1452,107 +1369,124 @@ $(document).ready(function() {
 
 // --- Sincronización del registro total ---
 $(document).ready(function() {
-  db.ref('historial').on('value', (snapshot) => {
-    const historial = snapshot.val();
-    let totalEfectivo = 0;
-    let totalTarjeta = 0;
-    if (historial) {
-      Object.values(historial).forEach(entry => {
-        if (!entry.devolucion) {
-          const total = parseFloat(entry.total);
-          if (entry.metodo === 'efectivo') {
-            totalEfectivo += total;
-          } else {
-            totalTarjeta += total;
-          }
-        } else {
-          const total = parseFloat(entry.total);
-          if (entry.metodo === 'efectivo') {
-            totalEfectivo -= total;
-          } else {
-            totalTarjeta -= total;
-          }
+    // Escuchar cambios en los totales
+    db.ref('totales').on('value', (snapshot) => {
+        const totales = snapshot.val() || { efectivo: 0, tarjeta: 0, general: 0 };
+        $("#totalEfectivo").text(parseFloat(totales.efectivo).toFixed(2));
+        $("#totalTarjeta").text(parseFloat(totales.tarjeta).toFixed(2));
+        $("#totalGeneral").text(parseFloat(totales.general).toFixed(2));
+    });
+
+    // Escuchar cambios en el historial
+    db.ref('historial').on('value', (snapshot) => {
+        const historial = snapshot.val();
+        const $historial = $('#historial');
+        $historial.empty();
+        
+        if (historial) {
+            Object.values(historial).reverse().forEach(entry => {
+                const li = document.createElement('li');
+                if (entry.devolucion) {
+                    li.textContent = `Devolución Hamaca ${entry.hamaca} - Total: €${entry.total} - Devolución: €${entry.devolucion} - Método: ${entry.metodo} - ${entry.fecha}`;
+                } else if (entry.reinicio) {
+                    li.textContent = `--- REINICIO DE CALCULADORA - ${entry.fecha} ---`;
+                    li.style.fontWeight = 'bold';
+                    li.style.color = '#ff0000';
+                } else {
+                    li.textContent = `Hamaca ${entry.hamaca} - Total: €${entry.total} - Recibido: €${entry.recibido} - Cambio: €${entry.cambio} - Método: ${entry.metodo} - ${entry.fecha}`;
+                }
+                $historial.prepend(li);
+            });
         }
-      });
-    }
-    $("#totalEfectivo").text(totalEfectivo.toFixed(2));
-    $("#totalTarjeta").text(totalTarjeta.toFixed(2));
-    $("#totalGeneral").text((totalEfectivo + totalTarjeta).toFixed(2));
-  });
+    });
 });
 
-// Función para crear y mostrar el diálogo personalizado
-function showCustomDialog(message, onConfirm, onCancel) {
-    // Crear el contenedor del diálogo
-    const dialog = document.createElement('div');
-    dialog.style.position = 'fixed';
-    dialog.style.top = '0';
-    dialog.style.left = '0';
-    dialog.style.width = '100%';
-    dialog.style.height = '100%';
-    dialog.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    dialog.style.display = 'flex';
-    dialog.style.justifyContent = 'center';
-    dialog.style.alignItems = 'center';
-    dialog.style.zIndex = '9999';
+function reiniciarCalculadora() {
+    if (confirm("¿Estás seguro de que deseas reiniciar la calculadora? Se borrará el registro total actual, pero se mantendrá el historial de operaciones.")) {
+        // 1. Limpiar el historial visual
+        const historial = document.getElementById('historial');
+        if (historial) {
+            historial.innerHTML = '';
+        }
 
-    // Crear el contenido del diálogo
-    const content = document.createElement('div');
-    content.style.backgroundColor = 'white';
-    content.style.padding = '20px';
-    content.style.borderRadius = '10px';
-    content.style.width = '80%';
-    content.style.maxWidth = '400px';
-    content.style.textAlign = 'center';
+        // 2. Resetear los totales en la interfaz
+        document.getElementById('totalEfectivo').textContent = '0.00';
+        document.getElementById('totalTarjeta').textContent = '0.00';
+        document.getElementById('totalGeneral').textContent = '0.00';
 
-    // Crear el mensaje
-    const messageElement = document.createElement('p');
-    messageElement.textContent = message;
-    messageElement.style.marginBottom = '20px';
-    content.appendChild(messageElement);
+        // 3. Resetear variables globales
+        totalEfectivo = 0;
+        totalTarjeta = 0;
 
-    // Crear los botones
-    const buttonContainer = document.createElement('div');
-    buttonContainer.style.display = 'flex';
-    buttonContainer.style.justifyContent = 'center';
-    buttonContainer.style.gap = '10px';
+        // 4. Crear el registro de reinicio
+        const fechaObj = new Date();
+        const dia = String(fechaObj.getDate()).padStart(2, '0');
+        const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
+        const anio = fechaObj.getFullYear();
+        const horas = String(fechaObj.getHours()).padStart(2, '0');
+        const minutos = String(fechaObj.getMinutes()).padStart(2, '0');
+        const fecha = `${dia}/${mes}/${anio} ${horas}:${minutos}`;
 
-    const confirmButton = document.createElement('button');
-    confirmButton.textContent = 'Sí';
-    confirmButton.style.padding = '10px 20px';
-    confirmButton.style.backgroundColor = '#4CAF50';
-    confirmButton.style.color = 'white';
-    confirmButton.style.border = 'none';
-    confirmButton.style.borderRadius = '5px';
-    confirmButton.style.cursor = 'pointer';
-    confirmButton.style.fontSize = '16px';
-
-    const cancelButton = document.createElement('button');
-    cancelButton.textContent = 'No';
-    cancelButton.style.padding = '10px 20px';
-    cancelButton.style.backgroundColor = '#f44336';
-    cancelButton.style.color = 'white';
-    cancelButton.style.border = 'none';
-    cancelButton.style.borderRadius = '5px';
-    cancelButton.style.cursor = 'pointer';
-    cancelButton.style.fontSize = '16px';
-
-    buttonContainer.appendChild(confirmButton);
-    buttonContainer.appendChild(cancelButton);
-    content.appendChild(buttonContainer);
-    dialog.appendChild(content);
-
-    // Añadir el diálogo al body
-    document.body.appendChild(dialog);
-
-    // Funciones para los botones
-    confirmButton.onclick = () => {
-        document.body.removeChild(dialog);
-        if (onConfirm) onConfirm();
-    };
-
-    cancelButton.onclick = () => {
-        document.body.removeChild(dialog);
-        if (onCancel) onCancel();
-    };
+        // 5. Limpiar y reiniciar todo en Firebase
+        Promise.all([
+            // Limpiar los totales
+            db.ref('totales').remove(),
+            // Limpiar el registro actual
+            db.ref('registro_actual').remove()
+        ]).then(() => {
+            // 6. Guardar el registro de reinicio en el historial
+            return guardarHistorialPago({
+                fecha,
+                timestamp: fechaObj.getTime(),
+                hamaca: "-",
+                total: "0.00",
+                recibido: "0.00",
+                cambio: "0.00",
+                metodo: "reinicio",
+                reinicio: true
+            });
+        }).then(() => {
+            // 7. Establecer nuevos totales en 0
+            return db.ref('totales').set({
+                efectivo: 0,
+                tarjeta: 0,
+                general: 0
+            });
+        }).then(() => {
+            // 8. Forzar una recarga de la página
+            window.location.reload();
+        }).catch(error => {
+            console.error("Error al reiniciar la calculadora:", error);
+            alert("Hubo un error al reiniciar la calculadora. Por favor, inténtalo de nuevo.");
+        });
+    }
 }
+
+// Modificar la función de sincronización inicial
+$(document).ready(function() {
+    // Verificar si hay un reinicio pendiente
+    db.ref('reinicio_pendiente').once('value').then((snapshot) => {
+        const reinicioPendiente = snapshot.val();
+        if (reinicioPendiente) {
+            // Si hay un reinicio pendiente, limpiar todo
+            Promise.all([
+                db.ref('historial').remove(),
+                db.ref('totales').remove(),
+                db.ref('registro_actual').remove()
+            ]).then(() => {
+                // Establecer totales en 0
+                return db.ref('totales').set({
+                    efectivo: 0,
+                    tarjeta: 0,
+                    general: 0
+                });
+            }).then(() => {
+                // Eliminar la marca de reinicio pendiente
+                return db.ref('reinicio_pendiente').remove();
+            }).catch(error => {
+                console.error("Error al procesar reinicio pendiente:", error);
+            });
+        }
+    });
+});
+
