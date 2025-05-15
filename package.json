@@ -1,0 +1,12 @@
+{
+  "name": "playa-juan",
+  "version": "1.0.0",
+  "description": "Aplicación de gestión de hamacas para Playa Juan",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server . -p 8080 -c-1 --cors"
+  },
+  "dependencies": {
+    "http-server": "^14.1.1"
+  }
+} 

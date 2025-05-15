@@ -1,0 +1,25 @@
+{
+  "name": "Playa Juan 3.5",
+  "short_name": "Playa Juan 3.5",
+  "description": "Aplicación de gestión de hamacas para Playa Juan",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#CEEFF1",
+  "theme_color": "#20B2AA",
+  "orientation": "portrait",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

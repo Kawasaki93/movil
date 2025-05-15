@@ -1,0 +1,699 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+    --primary-color: #48beec;
+    --secondary-color: #3498db;
+    --accent-color: #e74c3c;
+    --text-color: #333;
+    --background-color: #f5f5f5;
+    --card-background: #ffffff;
+    --border-radius: 12px;
+    --spacing: 1rem;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    padding-bottom: 70px; /* Espacio para la navegación inferior */
+}
+
+header {
+    background-color: var(--primary-color);
+    color: white;
+    text-align: center;
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+main {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: var(--spacing);
+}
+
+.reserva-form {
+    background-color: var(--card-background);
+    padding: var(--spacing);
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: var(--spacing);
+}
+
+.form-group {
+    margin-bottom: 1.2rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid #ddd;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--secondary-color);
+    outline: none;
+}
+
+/* Estilos para el interruptor VIP */
+.vip-toggle {
+    margin: 1.5rem 0;
+}
+
+.toggle-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.toggle-switch {
+    position: relative;
+    width: 60px;
+    height: 34px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: var(--accent-color);
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+/* Modo oscuro para el interruptor */
+@media (prefers-color-scheme: dark) {
+    .toggle-slider {
+        background-color: #666;
+    }
+    
+    .toggle-slider:before {
+        background-color: #fff;
+    }
+}
+
+.zona-selector {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.zona-btn {
+    background-color: #f8f9fa;
+    border: 2px solid #ddd;
+    padding: 0.8rem;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.zona-btn.selected {
+    background-color: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
+}
+
+.btn-primary {
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 1rem;
+    border: none;
+    border-radius: var(--border-radius);
+    width: 100%;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.reservas-lista {
+    background-color: var(--card-background);
+    padding: var(--spacing);
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filtros {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.filtro-fecha-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.btn-fecha {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--border-radius);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.btn-fecha:hover {
+    background-color: var(--secondary-color);
+    transform: scale(1.05);
+}
+
+.btn-fecha:active {
+    transform: scale(0.95);
+}
+
+.filtro-fecha-container input[type="date"] {
+    flex: 1;
+}
+
+.reserva-item {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 0.8rem;
+    border-left: 4px solid var(--secondary-color);
+    position: relative;
+}
+
+.reserva-item h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.reserva-salida {
+    border-left-color: var(--accent-color);
+    padding: 0;
+}
+
+.aviso-salida {
+    background-color: var(--accent-color);
+    color: white;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    text-align: center;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.aviso-texto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.btn-cerrar-notificacion {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.2rem 0.5rem;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.btn-cerrar-notificacion:hover {
+    opacity: 1;
+}
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--card-background);
+    display: flex;
+    justify-content: space-around;
+    padding: 0.8rem;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.nav-btn.active {
+    color: var(--secondary-color);
+}
+
+/* Animaciones */
+@keyframes slideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.reserva-item {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Estilos para modo oscuro */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-color: #f5f5f5;
+        --background-color: #1a1a1a;
+        --card-background: #2d2d2d;
+    }
+
+    input, select, textarea {
+        background-color: #3d3d3d;
+        color: white;
+        border-color: #4d4d4d;
+    }
+
+    .zona-btn {
+        background-color: #3d3d3d;
+        color: white;
+        border-color: #4d4d4d;
+    }
+
+    .reserva-item {
+        background-color: #3d3d3d;
+    }
+
+    .btn-fecha {
+        background-color: var(--primary-color);
+    }
+    
+    .btn-fecha:hover {
+        background-color: var(--secondary-color);
+    }
+
+    .aviso-salida {
+        background-color: var(--accent-color);
+    }
+
+    .btn-cerrar-notificacion {
+        color: white;
+    }
+}
+
+@media (max-width: 768px) {
+    main {
+        padding: 0 0.5rem;
+    }
+    
+    .reserva-form, .reservas-lista {
+        padding: 1rem;
+    }
+}
+
+/* Estilos para la Agenda */
+.agenda-section {
+    background-color: var(--card-background);
+    padding: var(--spacing);
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: var(--spacing);
+}
+
+.agenda-header {
+    margin-bottom: 1.5rem;
+}
+
+.agenda-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.btn-add {
+    background-color: var(--secondary-color);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.btn-add:hover {
+    background-color: #2980b9;
+    transform: scale(1.1);
+}
+
+.btn-add:active {
+    transform: scale(0.95);
+}
+
+.agenda-header h2 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.agenda-search {
+    position: relative;
+}
+
+.agenda-search input {
+    padding-left: 2.5rem;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>');
+    background-repeat: no-repeat;
+    background-position: 0.8rem center;
+    background-size: 1.2rem;
+}
+
+.agenda-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.cliente-card {
+    background-color: var(--card-background);
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cliente-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.cliente-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.cliente-nombre {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.cliente-telefono {
+    color: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cliente-telefono a {
+    color: var(--secondary-color);
+    text-decoration: none;
+}
+
+.cliente-observaciones {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #eee;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.cliente-acciones {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 1rem;
+}
+
+.cliente-acciones button {
+    flex: 1;
+    padding: 0.8rem 1rem;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cliente-acciones .btn-secondary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.cliente-acciones .btn-secondary:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.cliente-acciones .btn-secondary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cliente-acciones .btn-danger {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.cliente-acciones .btn-danger:hover {
+    background-color: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.cliente-acciones .btn-danger:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Ajustes para modo oscuro */
+@media (prefers-color-scheme: dark) {
+    .cliente-acciones .btn-secondary {
+        background-color: var(--primary-color);
+    }
+    
+    .cliente-acciones .btn-secondary:hover {
+        background-color: var(--secondary-color);
+    }
+    
+    .cliente-acciones .btn-danger {
+        background-color: var(--accent-color);
+    }
+    
+    .cliente-acciones .btn-danger:hover {
+        background-color: #c0392b;
+    }
+}
+
+/* Estilos para el modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+    position: relative;
+    background-color: var(--card-background);
+    margin: 20% auto;
+    padding: var(--spacing);
+    width: 90%;
+    max-width: 500px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-header h2 {
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0.5rem;
+    line-height: 1;
+}
+
+.btn-close:hover {
+    color: var(--accent-color);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Modo oscuro para el modal */
+@media (prefers-color-scheme: dark) {
+    .modal-content {
+        background-color: var(--card-background);
+    }
+}
+
+/* Estilos para reservas desplegables */
+.reserva-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px;
+    background-color: var(--card-background);
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.reserva-header:hover {
+    background-color: var(--hover-color);
+}
+
+.reserva-info-basica {
+    flex: 1;
+}
+
+.reserva-info-basica h3 {
+    margin: 0 0 5px 0;
+    color: var(--text-color);
+}
+
+.reserva-info-basica p {
+    margin: 5px 0;
+    color: var(--text-color);
+}
+
+.toggle-icon {
+    font-size: 12px;
+    color: var(--text-color);
+    transition: transform 0.3s ease;
+}
+
+.reserva-detalles {
+    display: none;
+    padding: 10px;
+    margin-top: 5px;
+    background-color: var(--card-background);
+    border-radius: 0 0 8px 8px;
+    border-top: 1px solid var(--border-color);
+}
+
+.reserva-detalles p {
+    margin: 5px 0;
+    color: var(--text-color);
+}
+
+.reserva-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Ajustes para modo oscuro */
+@media (prefers-color-scheme: dark) {
+    .reserva-header:hover {
+        background-color: var(--hover-color-dark);
+    }
+} 
